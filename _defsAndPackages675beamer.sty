@@ -1,0 +1,98 @@
+\ProvidesPackage{defsAndPackages}
+
+\usepackage{lipsum}
+\usepackage{caption,amsthm}
+\usepackage{animate}
+%\usepackage{beamerthemeshadow}
+%\usetheme{umbc2}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{alltt}
+\usefonttheme{structuresmallcapsserif} 
+%\setbeamertemplate{background canvas}[vertical shading][top=blue,middle=white,midpoint=.8,bottom=white]
+%\setbeamertemplate{navigation symbols}{} \useoutertheme{infolines}
+\setbeamertemplate{itemize item}{\textbullet}
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{footline}{%
+  \raisebox{5pt}{\makebox[\paperwidth]{\hfill\makebox[10pt]{\scriptsize\insertframenumber}}}}
+%\setbeamercolor{background canvas}{vertical shading,top=green,bottom=white} 
+%\beamertemplateshadingbackground{white}{green}
+
+
+  \definecolor{bluemain}{HTML}{0B61A4}
+  \definecolor{orangemain}{HTML}{FF9200}
+  \definecolor{redmain}{HTML}{FF4900}
+  \definecolor{redlight}{HTML}{FF9B73}
+  \definecolor{orangelight}{HTML}{FFC373}
+  \definecolor{cmugray}{RGB}{104,104,104}
+  \definecolor{cmulightgray}{RGB}{238,238,238}
+
+  \definecolor{greenmain}{HTML}{00AF64}
+  \definecolor{brick}{rgb}{.85,.1,.2}
+
+\usepackage{verbatim,color,lipsum}
+\newenvironment{blockcode}
+  {\leavevmode\small\color{brick}\verbatim}
+  {\endverbatim}
+
+\DeclareMathOperator*{\argmin}{\arg\!\min} % thanks, wikipedia!
+\newcommand{\f}{\omega}
+\newcommand{\kernel}{\kappa}
+
+\theoremstyle{plain}
+\newtheorem{propo}{Proposition}
+\newenvironment{prop}{\begin{propo}}{\end{propo}} 
+\newtheorem{statModel}{Model}
+\newenvironment{model}{\begin{statModel}}{\end{statModel}} 
+\newtheorem{assump}{Assumptions}
+\newenvironment{assumptions}{\begin{assump}}{\end{assump}} 
+\newtheorem{noteReminder}{Note}
+\newenvironment{notes}{\begin{noteReminder}}{\end{noteReminder}} 
+
+\newcommand{\sourcenum}[3]{$^{\textcolor{green!50!black} #1}$\let\thefootnote\relax
+ \footnotetext{\begin{flush#2}\textcolor{green!50!black}
+     {\tiny $^{#1}$ #3}\end{flush#2}}}
+\newcommand{\source}[2]{\let\thefootnote\relax\footnotetext{\begin{flush#1}
+     \begin{tiny}\textcolor{green!50!black}{#2} \end{tiny}\end{flush#1}}}
+\newcommand{\vsp}{\vspace{.15in}}
+\newcommand{\vvsp}{\vspace{.3in}}
+\newcommand{\vvvsp}{\vspace{.45in}}
+\newcommand{\bv}{\begin{verbatim}}
+\newcommand{\ev}{\end{verbatim} }
+\newcommand{\ef}{\end{frame} }
+
+
+
+
+
+\newcommand{\emphasis}[3]{\begin{tabular}{lp{#1}} \textbf{#2} & #3 \end{tabular} }
+\newcommand{\script}[1]{{\scriptsize (#1)}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\newcommand{\alg}[1]{\textcolor{greenmain}{#1}}
+\newcommand{\alo}[1]{\textcolor{orangemain}{#1}}
+\newcommand{\alr}[1]{\textcolor{brick}{#1}}
+\newcommand{\alb}[1]{\textcolor{bluemain}{#1}}
+\newcommand{\smallCapGreen}[1]{\textsc{\textcolor{greenmain}{#1}}}
+
+
+\newcommand{\classTitle}{ \alb{-Statistical Machine Learning-}}
+\newcommand{\organization}{\begin{flushright}
+     \begin{tiny}\alg{Lecturer: Darren Homrighausen, PhD} \end{tiny}\end{flushright}}
+\newcommand{\transitionSlide}[1]{\begin{frame}\alg{\huge #1}\end{frame}}
+
+
+\newcommand{\Cite}[3]{ {\scriptsize {\it #1};  \textbf{#2}, #3}}
+
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\newcommand{\bio}{\includegraphics[width=.3in]{../figures/biohazard}  }
+
+\newcommand{\Note}{$^{\sharp}$}
+

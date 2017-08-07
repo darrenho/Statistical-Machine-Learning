@@ -1,0 +1,1186 @@
+\documentclass[12pt]{beamer}
+%\usepackage[usenames,dvipsnames]{xcolor}
+
+\usepackage{_defsAndPackages675notation}
+\usepackage{_defsAndPackages675beamer}
+
+%\DeclareMathSizes{12}{12}{5}{12}
+\newcommand{\parenthetical}[2]{#1  \scriptstyle \alr{( #2)}}
+\begin{document}
+
+\title{\alg{Linear Methods for Classification}}
+\subtitle{\classTitle}
+%\author{\alg{Darren Homrighausen, PhD}}
+%\institute{\classTitle}
+\date{}
+
+
+
+\begin{frame}
+\maketitle
+%\titlepage
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=1in]{.../figures/CSU_logo2.eps}
+%\end{figure}
+%
+\organization
+%
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{An Overview of  Classification}
+Some examples:
+\begin{itemize}
+\item A person arrives at an emergency room with a set of symptoms that could be 1 of 3
+possible conditions.  Which one is it?
+\item A online banking service must be able to determine whether each transaction
+is fraudulent or not, using a customer's location, past transaction history, etc.
+\item Given a set of individuals sequenced DNA, can we determine whether various mutations
+are associated with different phenotypes?
+\end{itemize}
+\vsp
+
+All of these problems are \alo{not} regression problems.  They are \alo{classification} problems.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{The Set-up}
+It begins just like regression:  suppose we have observations
+\[
+\data = \{(X_1,Y_1),\ldots,(X_n,Y_n)\}
+\]
+\vsp
+
+Again, we want to estimate a function that maps $X$ into $Y$ that helps us predict
+as yet observed data.  
+
+{\scriptsize (This function is known as a \alg{classifier})}
+
+\vsp
+The same constraints apply:
+\begin{itemize}
+\item We want a classifier that predicts test data, not just the training data.
+\item Often, this comes with the introduction of some bias to get lower variance and better 
+predictions.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{How do we measure quality?}
+In regression, we have $Y_i \in \mathbb{R}$ and use squared error loss
+
+\vsp
+Instead, let $Y \in \mathcal{G} = \{1,\ldots, G\}$ 
+
+\script{This is arbitrary, sometimes other numbers, such as $\{-1,1\}$ will be used}
+
+\vsp
+We again make predictions $\hat{Y}$ based on $\data$
+
+\vsp
+Our loss function is now a $G\times G$ matrix $L$ with
+
+\begin{itemize}
+\item zeros on the diagonals
+\item $\ell(g,g')$ on the off diagonal ($g\neq g'$)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{How do we measure quality?}
+Again, we appeal to risk
+\[
+R(\hat{g}) = \E_{Z} \ell_{\hat{g}}(Z)
+\]
+If we use the law of total probability, this can be written
+\[
+R(\hat{g}) = \E_X \sum_{y=1}^G \ell_{\hat{g}}(Z = (y,X)) \P(Y = y | X)
+\]
+This can be minimized point wise over $x$, to produce
+\[
+g^*(x) = \argmin_{g \in \mathcal{G}} \sum_{y=1}^G \ell_g(z = (y,x)) \P(Y = y | X=x)
+\]
+\script{This is the \alg{Bayes' classifier}.  Also, $R(g^*)$ is the \alg{Bayes' limit}}
+\end{frame}
+
+\begin{frame}
+\frametitle{Best classifier}
+ If we make specific choices for $\ell$, we can find $g^*$ exactly
+
+\vsp
+As $Y$ takes only a few values, \alo{zero-one} prediction risk is natural
+  \[
+  \ell_g(Z) = \mathbf{1}_{Y\neq g(X)}(Z) \Rightarrow R(g) = \E[\ell_g(Z)] = \P(g(X) \neq Y),
+  \]
+
+\script{This means we want to \alg{label} or \alg{classify} a new observation $(X,Y)$ such that $\hat f(X) = Y$ as often
+as possible}
+
+\vsp
+Under this loss, we have
+\[
+g^*(x) = \argmin_{g \in \mathcal{G}} \left[ 1 - \P(Y = g | X=x)\right]  = \argmax_{g \in \mathcal{G}} \P(Y = g | X = x)
+\]
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Best classifier}
+Suppose we encode a two-class response as $Y \in \{0,1\}$
+
+\vsp
+Let's continue to use \alo{squared error loss}: $\ell_f(Z) = (Y - f(X))^2$
+
+\vsp
+Then, the Bayes' rule is 
+\[
+m(X) = \E[ Y | X] = \P(Y = 1 | X)
+\]
+
+Hence, we achieve the same Bayes' rule/limit with squared error classification
+by discretizing the probability:
+
+\[
+g^*(x) = \mathbf{1}_{m(x) > 1/2}(x)
+\]
+\end{frame}
+
+\begin{frame}
+\frametitle{Classification is easier than regression}
+Let $\hat{m}$ be any estimate of $m$
+
+\vsp
+Let $\hat{g}(x) = \mathbf{1}_{\hat{m}(x) > 1/2}(x)$
+
+\vsp
+It can be shown that
+\begin{align*}
+  \lefteqn{\P(Y \neq \hat{g}(X) | X = x) - \P(Y \neq g^*(X) | X = x) =}  \\
+  & = 
+(2m(x) - 1)(\mathbf{1}_{g^*(x) = 1}(x) - \mathbf{1}_{\hat{g}(x) = 1}(x)) \\
+& = |2m(x) - 1|\mathbf{1}_{g^*(x)\neq \hat{g}(x) }(x)  \\
+& =  2|m(x) - 1/2|\mathbf{1}_{g^*(x)\neq \hat{g}(x) }(x) 
+\end{align*}
+[\smallCapGreen{Exercise}]
+\end{frame}
+
+\begin{frame}
+\frametitle{Classification is easier than regression}
+Now
+\[
+g^*(x)\neq \hat{g}(x) \Rightarrow |\hat{m}(x) - m(x)| \geq |\hat{m}(x) - 1/2|
+\]
+%\pause
+%\script{On this part of the sample space, $m$ and $\hat{m}$ are on opposite sides of 1/2}
+Therefore
+\begin{align*}
+ \lefteqn{\P(Y \neq \hat{g}(X)) - \P(Y \neq g^*(X)) =}\\
+& =  \int(\P(Y \neq \hat{g}(X) | X = x) - \P(Y \neq g^*(X) | X = x))d\P_X(x)   \\
+& =  \int 2|\hat{m}(x) - 1/2|\mathbf{1}_{g^*(x)\neq \hat{g}(x) }(x)d\P_X(x)  \\
+& \leq  2\int |\hat{m}(x) - m(x)| \mathbf{1}_{g^*(x)\neq \hat{g}(x) }(x)d\P_X(x) \\
+& \leq  2\int |\hat{m}(x) - m(x)|d\P_X(x) 
+\end{align*}
+\script{If $\hat{m}$ gets close to $m$ on average, we do good classifications.  The converse is \alo{not} true}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bayes' rule and class densities}
+Using Bayes' theorem
+\begin{align*}
+m(x) & = \P(Y = 1 | X = x) \\
+& =
+\frac{p(x|Y = 1) \P(Y = 1)}{\sum_{y \in \{0,1\}} p(x|Y = y) \P(Y = y)} \\
+& =
+\frac{f_1(x) \pi}{ f_1(x)\pi + f_0(x)(1-\pi)}
+\end{align*}
+We call $f_g(x)$ the \alg{class densities}
+
+\vsp
+The Bayes' rule can be rewritten\Note
+\[
+g^*(x) = 
+\begin{cases}
+1 & \textrm{ if } \frac{f_1(x)}{f_0(x)} > \frac{1-\pi}{\pi} \\
+0  &  \textrm{ otherwise}
+\end{cases}
+\]
+\end{frame}
+
+\begin{frame}
+\frametitle{How to find a classifier}
+All of these prior expressions for $g^*$ give rise to classifiers
+\begin{itemize}
+\item \smallCapGreen{Empirical risk minimization:}  Choose a set of classifiers $\Gamma$ and find
+$\hat{g} \in \Gamma$ that minimizes some estimate of $R(g)$
+
+\script{This can be quite challenging as, unlike in regression, the training error is nonconvex}
+\item  \smallCapGreen{Regression:}  Find an estimate $\hat{m}$ and plug it in to the Bayes' rule
+\item  \smallCapGreen{Density estimation:} Estimate $f_g$ from the appropriate $Z$ and $\hat{\pi} = \overline{Y}$
+and plug them in to $g^*$
+\end{itemize}
+\end{frame}
+
+\transitionSlide{Linear classifiers}
+
+\begin{frame}
+\frametitle{Linear classifier}
+As our classifier $\hat{g}$ takes a discrete number of values, it is equivalent
+to partitioning the covariate space into \alo{regions}
+
+\vsp
+The boundaries between these regions are known as \alg{decision boundaries}
+
+\vsp
+These decision boundaries are sets of points at which $\hat{g}$ is indifferent between 
+two classes
+
+\vsp
+A \alg{linear classifier} is a $\hat{g}$ that produces linear decision boundaries
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Linear classifier: Example}
+Suppose $\mathcal{G} = \{ 0,1\}$ and we form the GLM logistic regression
+
+\vsp
+The posterior probabilities are
+\begin{align*}
+\P(Y = 1 | X= x)  & = \frac{\exp\{\beta_0 + \beta^{\top}x\}}{1 + \exp\{\beta_0 + \beta^{\top}x\}} \\
+\P(Y = 0 | X= x) & = \frac{1}{1 + \exp\{\beta_0 + \beta^{\top}x\}}
+\end{align*}
+
+The \alo{logit} (i.e.: log odds) transformation forms a linear decision boundary
+\[
+\log\left( \frac{\P(Y = 1 | X = x)}{\P(Y = 0 | X = x) } \right) = \beta_0 + \beta^{\top} x
+\]
+The decision boundary is the hyperplane $\{x : \beta_0 + \beta^{\top} x = 0\}$
+
+\script{Log-odds below 0, classify as 0, above 0 classify as a 1}
+\end{frame}
+
+\begin{frame}
+\frametitle{Linear classifier: Extensions}
+The term ``linear classifier'' can be used to describe a classifier that has linear decision boundaries
+in a \alo{higher dimensional} space, but which as a nonlinear decision boundary in the original
+covariate space
+
+\vsp
+For instance, if I include as features:
+\[
+x_1^2, \ldots, x_p^2, x_1x_2, \ldots, x_1x_p, \ldots 
+\]
+and thereby add $p(p+1)/2$ additional features, a linear classifier 
+in this enhanced space will be \alo{nonlinear} (and in fact quadratic) in
+the original covariates
+
+\vsp
+This is a \alg{parametric kernel method}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bayes' rule-ian approach}
+The decision theory for classification indicates we need to know
+the posterior probabilities: $\P(Y = g | X)$ for doing optimal classification
+
+\vsp
+Suppose that
+\begin{itemize}
+\item $p_g(x) = \P(x | Y = g)$ is the \alo{likelihood} of the covariates
+given the class labels 
+\item$\pi_g = \P(Y=g)$ is the prior
+\end{itemize}
+
+Then
+
+\[
+\P(Y = g | X = x) = \frac{p_g(x) \pi_g}{\sum_{g \in \mathcal{G}}p_g(x) \pi_g}  \propto p_g(x) \pi_g
+\]
+
+\smallCapGreen{Conclusion:} Having the class densities almost gives us the Bayes' rule as 
+the training proportions can usually be used to estimate $\pi_g$
+
+\script{Though, sometimes estimating $\pi_g$ can be nontrivial/impossible}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bayes' rule-ian approach: Summary}
+There are many techniques based on this idea
+\begin{itemize}
+\item Linear/quadratic discriminant analysis
+
+\script{Estimates $p_g(x)$ assuming multivariate Gaussianity}
+\item General nonparametric density estimators
+\item Naive Bayes
+\script{Factors $p_g(x)$ assuming conditional independence}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Discriminant analysis}
+Suppose that
+\[
+p_g(x) \propto |\Sigma_g|^{-1/2} e^{-(x - \mu_g)^{\top}\Sigma_g^{-1}(x - \mu_g)/2}
+\]
+
+Let's assume that \alo{$\Sigma_g \equiv \Sigma$}. 
+\vsp
+
+Then the log-odds between two classes $g,g'$ is:
+\begin{align*}
+\log \frac{\P(Y = g | X = x)}{\P(Y = g' | X = x) } 
+&  = 
+\log\frac{p_g(x)}{p_{g'}(x)} + \log \frac{\pi_g}{\pi_{g'}}\\
+& = 
+\log \frac{\pi_g}{\pi_{g'}} - (\mu_{g} + \mu_{g'})^{\top} \Sigma^{-1} (\mu_g - \mu_{g'})/2  \\
+& \qquad+ x^{\top} \Sigma^{-1}(\mu_g - \mu_{g'})
+\end{align*}
+
+This is linear in $x$, and hence has a linear decision boundary
+\end{frame}
+
+\begin{frame}
+\frametitle{Types of discriminant analysis}
+The \alg{linear discriminant function} is (proportional to) the log posterior:
+\[
+\delta_g(x) = \log \pi_g + x^{\top} \Sigma^{-1}\mu_g  - \mu_{g}^{\top} \Sigma^{-1} \mu_g /2 
+\]
+and we assign $g(x) = \argmin_g \delta_g(x)$
+
+\script{This is just minimum Euclidean distance, weighted by the covariance matrix and prior probabilities}
+
+\vsp
+Now, we must estimate $\mu_g$ and $\Sigma$.  If we...
+\begin{itemize}
+\item use the intuitive estimators $\hat{\mu}_g = \overline{X}_g$ and 
+$\frac{1}{n-G} \sum_{g \in \mathcal{G}} \sum_{i \in g} (X_i - \hat{\mu}_g) (X_i - \hat{\mu}_g)^{\top}$ then we have produced \alo{linear discriminant 
+analysis} (LDA)
+\item regularize these `plug-in' estimates, we can form \alo{regularized discriminant analysis}
+(Friedman (1989)).  This could be (for $\lambda \in [0,1]$):
+\[
+\hat{\Sigma}_{\lambda} = \lambda \hat{\Sigma} + (1-\lambda) \hat\sigma^2 I
+\]
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Quadratic discriminant analysis (QDA)}
+If we drop the assumption regarding identical covariances, we get the following discriminant function:
+\[
+\delta_g(x) = \log \pi_g + x^{\top} \Sigma_g^{-1}\mu_g  - \mu_{g}^{\top} \Sigma_g^{-1} \mu_g /2 - \log | \Sigma_g|/2
+\]
+where $\Sigma_g$ can be estimated by the sample covariance of the observations in group $g$
+\vsp
+
+In my experience, QDA works well if $n$ is large relative to $p$
+
+\script{However, it isn't often computable in practice; too many parameters}
+\vsp
+
+We can augment regularized discriminant analysis to shrink each $\hat{\Sigma}_g$ to $\hat{\Sigma}$ or even to 
+$\hat{\Sigma}_\lambda$
+\[
+\hat{\Sigma}_{g,(\gamma,\lambda)}  = \gamma\hat{\Sigma}_g + (1-\gamma)\hat{\Sigma}_{\lambda}
+\]
+\script{To the best of my knowledge, little is formally known about this procedure. 
+See Guo et al. (2006) for an empirical comparison }
+\end{frame}
+
+%\begin{frame}
+%\frametitle{Discriminant analysis in practice}
+%\begin{align*}
+%\delta_g(x) 
+%& = 
+%\log \pi_g + x^{\top} \Sigma_g^{-1}\mu_g  - \mu_{g}^{\top} \Sigma_g^{-1} \mu_g /2   - \log | \Sigma_g|/2\\
+%&\propto
+%\log \pi_g + (x - \mu_g)^{\top} \Sigma_g^{-1}(x - \mu_g)/2  - \log | \Sigma_g|/2
+%\end{align*}
+%So,
+%\begin{enumerate}
+%\item \smallCapGreen{Spectrum:} Form $\hat{\Sigma}_{\gamma,\lambda} = U D U^{\top}$
+%\item \smallCapGreen{Sphere:} Rewrite your data as $X \leftarrow D^{-1/2} U^{\top} X$
+%\end{enumerate}
+%\end{frame}
+
+\begin{frame}
+\frametitle{Reduced rank LDA}
+Part of the popularity of LDA is that it provides \alo{dimension reduction} as well
+
+\vsp
+The $G$ class centroids $\mu_g$ must all lie in an affine subspace of dimension $G-1$ (presuming
+$G < p$)
+
+\script{Let $\mathcal{H}_{G-1}$ be this subspace}
+
+\vsp
+If $G$ is much less than $p$, this will be a substantial drop in dimension
+\end{frame}
+
+\begin{frame}
+\frametitle{Reduced rank LDA}
+In practice, we can compute LDA from spectral information:
+\begin{align*}
+\delta_g(x) 
+& = 
+\log \pi_g + x^{\top} \Sigma^{-1}\mu_g  - \mu_{g}^{\top} \Sigma^{-1} \mu_g /2 \\
+&\propto
+\log \pi_g + (x - \mu_g)^{\top} \Sigma^{-1}(x - \mu_g)/2 
+\end{align*}
+So,
+\begin{enumerate}
+\item \smallCapGreen{Spectrum:} Form $\hat{\Sigma}_{\lambda} = U D U^{\top}$
+\item \smallCapGreen{Sphere:} Rewrite your data as $\tilde{X} \leftarrow D^{-1/2} U^{\top} X$
+\item \smallCapGreen{Assign:}  Classify to the closest mean in transformed space
+
+\script{Penalizing by estimate of prior probability}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Reduced rank LDA}
+We can ignore any information orthogonal to $\mathcal{H}_{G-1}$, as it contributes to each
+class equally (in the sphered space)
+
+\vsp
+So, project $\tilde{X}$ onto $\mathcal{H}_{G-1}$ and make distance computations there
+
+\vsp
+When $G = 2,3$, this means we can plot the projection onto $\mathcal{H}_{G-1}$ with
+no loss of information about the LDA solution
+
+\vsp
+If $G > 3$, then we may wish to project onto a \alo{reduced} space $\mathcal{H}_{L} \subset \mathcal{H}_{G-1}$
+
+\vsp
+We'd like $\mathcal{H}_L$ to maintain the most amount of information possible for assigning to classes
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Reduced rank LDA}
+This can be done via the following procedure
+\begin{enumerate}
+\item \smallCapGreen{Centroids:} Compute $G \times p$ matrix $M$ of class centroids
+\item \smallCapGreen{Covariance:} Form $\hat\Sigma$ as the common covariance matrix
+\item \smallCapGreen{Sphere:} $\tilde{M} = M \hat\Sigma^{-1/2}$
+\item \smallCapGreen{Between Covariance:} Find covariance matrix for $\tilde{M}$, call it $B$
+\item \smallCapGreen{Spectrum} Compute $B = V S V^{\top}$
+\end{enumerate}
+\vsp
+
+Now, span$(V_L) = \mathcal{H}_L$
+
+\vsp
+Also, the coordinates of the data in this space are $Z_k = v_k^{\top} \hat\Sigma^{-1/2}X$
+
+\vsp
+These derived variables are commonly called \alg{canonical coordinates}
+\end{frame}
+
+\begin{frame}
+\frametitle{Reduced rank LDA: Summary}
+\begin{itemize}
+\item Gaussian likelihoods with identical covariances leads to linear decision boundaries (LDA)
+\item We can actually do all relevant computations/graphics on the reduced space $\mathcal{H}_{G-1}$
+\item If this isn't small enough, we can do `optimal' dimension reduction to $\mathcal{H}_L$
+\end{itemize}
+\vsp
+
+As an aside, this procedure is identical to \alg{Fisher's discriminant analysis}
+\end{frame}
+
+\begin{frame}
+\frametitle{Logistic regression}
+Logistic regression for two classes simplifies to a likelihood:
+
+\script{Using $\pi_i(\beta) = \P(Y = 1 | X = X_i,\beta)$}
+\begin{align*}
+\ell(\beta) 
+& = 
+\sum_{i=1}^n \left( y_i\log(\pi_i(\beta)) + (1-y_i)\log(1-\pi_i(\beta))\right) \\
+& = 
+\sum_{i=1}^n \left( y_i\log(e^{\beta^{\top}X_i}/(1+e^{\beta^{\top}X_i})) - (1-y_i)\log(1+e^{\beta^{\top}X_i})\right) \\
+& = 
+\sum_{i=1}^n \left( y_i\beta^{\top}X_i -\log(1 + e^{\beta^{\top} X_i})\right)
+\end{align*}
+
+This gets optimized via Newton-Raphson updates and iteratively reweighed least squares
+\end{frame}
+
+\begin{frame}
+\frametitle{Sparse logistic regression}
+This procedure suffers from all the same problems as least squares
+
+\vsp
+We can use penalized likelihood techniques in the same way as we did before
+
+\vsp
+This means maximizing (over $\beta_0,\beta$):
+\[
+\sum_{i=1}^n \left( y_i(\beta_0 + \beta^{\top}X_i) -\log(1 + e^{\beta_0 + \beta^{\top} X_i})\right)  
+- \lambda (\alpha||\beta||_1+ (1-\alpha) ||\beta||_2^2)
+\]
+\script{Don't penalize the intercept and do standardize the covariates}
+
+\vsp
+This is the \alg{logistic elastic net}
+\end{frame}
+
+\begin{frame}
+\frametitle{Sparse logistic regression: Software}
+Using the {\tt R} package {\tt glmnet} finds the minimum CV solution over a grid of $\lambda$ values
+
+\vsp
+Unfortunately, the computations are more difficult for path algorithms (such as the {\tt lars} package)
+due to the coefficient profiles being only piecewise smooth
+
+\vsp
+{\tt glmpath} is an {\tt R} package that does quadratic approximations to the profiles, while
+still computing the exact points at which the active set changes 
+
+\vsp
+\script{Park, Hastie (2007).  It is necessary to set a `step' size argument for the approximation.}
+\end{frame}
+
+\begin{frame}
+\frametitle{Logistic versus LDA}
+The log posterior odds via the Gaussian likelihood (\alo{LDA}) for class $g$ versus $G$ are
+\begin{align*}
+\log \frac{ \P(Y = g | X= x)}{\P(Y = G | X = x) } 
+& =
+\log \frac{\pi_g}{\pi_{G}} - (\mu_{g} + \mu_{G})^{\top} \Sigma^{-1} (\mu_g - \mu_{G})/2   \\
+& \qquad +  x^{\top} \Sigma^{-1}(\mu_g - \mu_{G}) \\
+& = \alpha_{g,0} + \alpha_g^{\top}x
+\end{align*}
+
+\vsp
+Likewise, multi class \alo{logistic} follows (for $g = 1,\ldots,G-1$):
+\begin{align*}
+\log \frac{ \P(Y = g | X= x)}{\P(Y = G | X = x) } 
+& =
+\beta_{g,0} + \beta_{g}^{\top}x
+\end{align*}
+\script{The choice of base class $G$ is arbitrary}
+
+\vsp
+\smallCapGreen{They both specify the log-odds as linear models!}
+\end{frame}
+
+\begin{frame}
+\frametitle{Logistic versus LDA}
+We can write the joint distribution of $Y$ and $X$ as
+\[
+\P(X,Y) = \P(Y|X)\P(X)
+\]
+The previous slide shows that $\P(Y|X)$ is the same for both methods:
+\[
+\P(Y = g | X = x)
+ = 
+ \frac{e^{\alpha_{g,0} + \alpha_{g}^{\top}x}}{1 + \sum_{k = 1}^{G-1} e^{\alpha_{k,0} + \alpha_{k}^{\top}x}}
+\]
+
+\begin{itemize}
+\item Logistic regression leaves $\P(X)$ arbitrary, and implicitly estimates it with the empirical measure 
+
+\script{This could be interpreted as a \alo{frequentist} approach, where we are maximizing the 
+likelihood only and using the improper uniform prior}
+\item LDA models 
+\[
+\P(X,Y=g) = \P(X | Y=g) \P(Y=g) = N(x;\mu_g,\Sigma) \pi_g
+\]
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Logistic versus LDA}
+Some remarks:
+\begin{itemize}
+\item Forming \alo{logistic} requires fewer assumptions
+\item The MLEs under \alo{logistic} will be undefined if the classes are perfectly separable
+\item If some entries in $X$ are qualitative, then the modeling assumptions behind \alo{LDA} are suspect
+\item In practice, the two methods tend to give very similar results
+\end{itemize}
+\end{frame}
+
+\transitionSlide{Support vector machines}
+
+\begin{frame}
+\frametitle{Optimal separating hyperplanes}
+A main initiative in early computer science was to find \alg{separating hyperplanes}
+among groups of data
+
+\script{Rosenblatt (1958) with the \alo{perceptron} algorithm}
+
+\vsp
+The issue is that if there is a separating hyperplane, there is an infinite number
+
+\vsp
+An \alg{optimal separating hyperplane} can be generated by finding \alo{support points} and
+bisecting them.
+
+\script{Vapnik (1996)}
+\end{frame}
+
+\begin{frame}
+\frametitle{Basic linear geometry}
+A hyperplane in $\R^p$ is  given by 
+\[
+\mathcal{H} = \{x \in \R^p :  f(x) = \beta_0 + \beta^{\top}x = 0\}
+\]
+
+\vsp
+\begin{enumerate}
+\item The vector $\beta$ is \alg{normal} to $\mathcal{H}$
+
+\item For any point $x \in \R^p$, the (signed) length of its orthogonal complement
+to $\mathcal{H}$ is $f(x)$
+\end{enumerate}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Support vector machines (SVM)}
+Let $Y_i \in \{-1,1\}$
+
+\script{w.l.o.g let $||\beta||_2 = 1$}
+
+\vsp
+A classification rule induced by this hyperplane is
+\[
+\hat{Y}(x) = \textrm{sgn}(x^{\top}\beta + \beta_0)
+\]
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Separating hyperplanes}
+As our classification rule is based on a hyperplane $\mathcal{H}$
+\[
+\hat{Y}(x) = \textrm{sgn}(x^{\top}\beta + \beta_0)
+\]
+we know the signed distance to $\mathcal{H}$ is $f(x) = x^{\top}\beta + \beta_0$
+
+\vsp
+Under classical \alo{separability}, we can find a function such that $Y_i f(X_i) > 0$ 
+
+\script{That is, makes perfect classifications via $\hat{Y}$}
+\vsp
+
+The larger the quantity $Y_if(X_i)$, the more \alo{separated} the classes
+\end{frame}
+
+\begin{frame}
+\frametitle{Optimal separating hyperplane}
+This idea can be encoded in the following convex program
+
+\[
+\max_{\beta_0,\beta} M \textrm{ subject to}
+\]
+\[
+Y_if(X_i) \geq M \textrm{ for each } i
+\]
+Drop the norm constraint on $\beta$ and divide both sides.  Then we have the equivalent program
+\[
+\min_{\beta_0,\beta} \norm{\beta}_2 \textrm{ subject to}
+\]
+\[
+Y_if(X_i) \geq 1 \textrm{ for each } i
+\]
+\script{Convex optimization program: quadratic criterion, linear inequality constraints}
+\end{frame}
+
+\begin{frame}
+\frametitle{Optimal separating hyperplane}
+Of course, we can't realistically assume that the data are linearly separated (even in a transformed space)
+
+\vsp
+In this case, the previous program has no \alo{feasible} solution
+
+\vsp
+We need to introduce \alg{slack} variables that allow for overlap among the classes
+\end{frame}
+
+\begin{frame}
+\frametitle{SVMs}
+\[
+\min_{\beta_0,\beta} \norm{\beta}_2 \; \textrm{ subject to}
+\]
+\[
+Y_if(X_i) \geq 1  - \xi_i, \xi_i \geq 0, \sum \xi_i \leq c, \textrm{ for each } i
+\]
+\script{Convex optimization program: quadratic criterion, linear inequality constraints}
+
+\vsp
+This can be rewritten as
+\[
+\min_{\beta_0,\beta} \norm{\beta}_2/2 + C\sum \xi_i \; \textrm{ subject to}
+\]
+\[
+Y_if(X_i) \geq 1  - \xi_i, \xi_i \geq 0, , \textrm{ for each } i
+\]
+Note that
+\begin{itemize}
+\item  $C$ is the  \alg{cost} parameter
+\item The separable case corresponds to  $C=\infty$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{SVMs}
+The corresponding \alo{Lagrange} function to the constrained optimization problem is
+\begin{align*}
+\ell_{SVM}(\beta,\beta_0,\xi)
+ & = 
+ \norm{\beta}_2/2 + C\sum \xi_i - \\
+ & \qquad - \sum_{i=1}^n\gamma_i[Y_if(X_i) - (1  - \xi_i)] - \sum_{i=1}^n \lambda_i \xi_i 
+\end{align*}
+
+Minimize with respect to $\beta_0,\beta,\xi_i$ via partial derivatives:
+\begin{align*}
+\beta & = \sum_{i=1}^n  \gamma_i y_ix_i \\
+0 & = \sum_{i=1}^n \gamma_iy_i \\
+\gamma_i &= C - \lambda_i \\
+\gamma_i,\lambda_i,\xi_i & \geq 0
+\end{align*}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{SVMs}
+Outline of optimization steps
+\begin{enumerate}
+\item Formulate constrained form of problem
+\item Convert to (\alo{primal}) Langragian form
+\item Take all relevant (sub)-derivatives and set to zero
+\item Substitute these conditions back into \alo{primal} Langrangian $\longrightarrow$ \alo{dual} Lagrangian
+
+\script{This forms a lower bound on the solution to the constrained primal form of objective}
+\item Form Karush-Kuhn-Tucker (KKT) conditions for inequality constraints
+\item Examine the conditions for \alg{strong duality} which implies that the primal and dual forms have the same solution
+
+\script{The usual method is via Slater's condition, which says strong duality holds 
+if it is a convex program with non-empty constraint region}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{SVMs}
+Once minimizers for $ \hat\gamma$ are found, we can plug-in and get
+\[
+\hat\beta = \sum_{i=1}^n \hat\gamma_i Y_i X_i
+\]
+Due to the KKT conditions\Note:
+\begin{align}
+\gamma_i[Y_i(X_i^{\top} \beta +\beta_0) - (1-\xi_i)] & = 0 \label{eq:kkt1}\\
+\lambda_i\xi_i & = 0 \\
+Y_i(X_i^{\top} \beta +\beta_0) - (1-\xi_i) & = 0 \label{eq:kkt2}
+\end{align}
+\vsp
+The $\hat\gamma_i$ are nonzero only for $i$ such that (\ref{eq:kkt2}) holds (by (\ref{eq:kkt1}))
+
+\vsp
+These observations are called the \alg{support vectors}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{SVMs}
+By the previous conditions, either $\hat\xi_i = 0$ or $\hat\gamma_i = C$ 
+
+\vsp
+Using the condition: $\gamma_i[Y_i(X_i^{\top} \beta +\beta_0) - (1-\xi_i)]  = 0$
+
+\vsp
+For support vector $i$, if $\hat\xi_i = 0$:
+\[
+Y_i(X_i^{\top} \beta +\beta_0) - (1-\xi_i) = 0 \Leftrightarrow  \hat\beta_0 = 1/Y_i - X_i^{\top} \hat\beta
+\]
+
+
+\script{These estimates are usually averaged to get a final estimate of $\beta_0$}
+
+\vsp
+Now, the final classification is given by
+\[
+\hat{Y}(x) = \textrm{sgn}(\hat{f}(x)) =  \textrm{sgn}(x^{\top}\hat\beta + \hat\beta_0)
+\]
+
+\vsp
+The tuning parameter is given by the \alo{cost} $C$
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel SVM}
+If we return to step \alb{4.} from the SVM outline:
+
+\vsp
+``Substitute these conditions back into \alo{primal} Langrangian 
+
+$\longrightarrow$ \alo{dual} Lagrangian''
+
+\vsp
+We get that this dual Lagrangian is:
+\[
+\ell_D(\gamma) = \sum_i \gamma_i - \frac{1}{2}\sum_i \sum_{i'} \gamma_i \gamma_{i'} Y_i Y_{i'} \alr{X_i^{\top}X_{i'}}
+\]
+with side conditions: $\gamma_i \in [0,C]$ and $\gamma^{\top}Y = 0$
+
+\vsp
+The term $\alr{X_i^{\top}X_{i'}} = \langle X_i, X_{i'} \rangle$ is an \alo{inner product}
+
+\vsp
+SVMs therefore depend on the covariates via an inner product only
+
+\vsp
+This leaves them ripe for a \alo{kernel method}
+\end{frame}
+
+\transitionSlide{Kernel Methods}
+
+\begin{frame}
+\frametitle{Three related methods}
+The following are seemingly disparate methods
+\begin{itemize}
+\item \smallCapGreen{Smoothness penalization:} Regularizing a loss functions with a penalty on smoothness 
+
+\script{Example: Kernel SVM}
+\item \smallCapGreen{Feature creation:} Imposing a \alo{feature mapping} $\Phi: \R^p \rightarrow \mathcal{A}$
+thus creating new features e.g. via polynomials or interactions
+
+\script{Example: Regression splines or polynomial regression}
+\item \smallCapGreen{Gaussian processes:} Modeling the regression function as a Gaussian process
+with a given mean and covariance
+
+\script{Example: Gaussian process regression}
+\end{itemize}
+\vsp
+
+It turns out these concepts are all the same and each forms a \alg{reproducing kernel Hilbert space} (RKHS)
+
+\script{Many of these ideas are in Wahba (1990).  It was introduced to the ML community in Vapnik et al. (1996)
+and summarized in a nice review paper in Hofmann et al. (2008)}
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel methods}
+Suppose $k:\mathcal{A}\times\mathcal{A} \rightarrow \R$ is a 
+\alg{positive definite} kernel
+
+\script{This means $\int\int k(x,y)f(x)f(y) dxdy > 0$}
+
+\vsp
+To be concrete, think of $\mathcal{A} = \R^p$
+
+\script{However, any set of objects will do as long as an \alo{inner product} can be defined}
+
+\vsp
+Let's consider the space of functions generated by the completion of
+\[
+\mathcal{H}_k = \{k(\cdot,y): y \in \R^p\}
+\]
+\script{This loosely speaking all functions of the form $f(x) = \sum_{j=1}^J \alpha_j k(x,y_j)$}
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel methods}
+Write the eigenvalue expansion of $k$ as
+\[
+k(x,y) = \sum_{j=1}^\infty \theta_j \phi_j(x)\phi_j(y)
+\]
+with
+
+\begin{itemize}
+\item $\theta_j \geq 0 \parenthetical{\qquad}{\textrm{nonnegative definite}}$
+\item $\norm{(\theta_j)_{j=1}^\infty}_2 < \infty$
+\end{itemize}
+\script{This is called \alg{Mercer's theorem}, and such a $k$ is called a \alg{Mercer} kernel}
+\vsp
+
+We can write any $f \in \mathcal{H}_k$ with two constraints
+\begin{itemize}
+\item $f(x) = \sum_{j=1}^\infty f_j \phi_j(x)$
+\item $\langle f, f \rangle_{\mathcal{H}_k} = \norm{f}_{\mathcal{H}_k}^2 = \sum_{j=1}^\infty f_j^2/\theta_j < \infty$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel methods via regularization}
+After specifying a kernel function\footnote{Or crucially and equivalently a set of eigenfunctions and
+eigenvalues} $k$, we can define an estimator via
+\[
+\min_{f \in \mathcal{H}_k} \hat\P \ell_f + \lambda \norm{f}_{\mathcal{H}_k}^2
+\]
+
+\vsp
+This is a (potentially) infinite dimensional optimization problem 
+
+\script{\alo{hard}, especially with a computer}
+
+\vsp
+It can be shown that the solution has the form
+\[
+\hat{f}(x) = \sum_{i=1}^n \beta_i k(x,x_i)
+\]
+\script{This is known as the \alg{representer theorem}}
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel methods via regularization}
+
+\[
+\hat{f}(x) = \sum_{i=1}^n \beta_i \alr{k(x,x_i)}
+\]
+The terms $\alr{k(x,x_i)}$ are the \alg{representers}, as
+\[
+\langle k(\cdot,x_i), f \rangle_{\mathcal{H}_k} = f(x_i)
+\]
+and $\mathcal{H}_k$ is called a \alg{reproducing kernel Hilbert space} (RKHS) as
+\[
+\langle k(\cdot,x_i),k(\cdot,x_{i'}) \rangle_{\mathcal{H}_k} = k(x_i,x_{i'})
+\]
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel methods via regularization}
+Due to these properties, we can write the optimization problem as
+\[
+\min_{\beta} \hat\P \ell_{\mathbf{K}\beta} + \lambda \beta^{\top} \mathbf{K}\beta
+\]
+where $\mathbf{K} = [k(x_i,x_{i'})]$
+
+\vsp
+This provides a prescription for forming an incredibly rich suite of estimators:
+
+\vsp
+Choose a
+\begin{itemize}
+\item kernel $k$
+\item loss function $\ell$
+\end{itemize}
+and then minimize
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel methods via regularization: Example}
+Suppose that $\ell_{\mathbf{K}\beta}(Z) = (Y - \mathbf{K}\beta)^2$
+
+\vsp
+Then:
+\[
+\hat{\beta} = \argmin_{\beta} \hat\P \ell_{\mathbf{K}\beta} + \lambda \beta^{\top} \mathbf{K}\beta = (\mathbf{K} + \lambda I)^{-1}Y
+\]
+and
+\[
+\hat{f} = \mathbf{K}\hat\beta = \mathbf{K}(\mathbf{K} + \lambda I)^{-1}Y = (\lambda\mathbf{K}^{-1} + I)^{-1}Y
+\]
+are the \alo{fitted values}
+
+\script{This should be compared with the notes on ridge regression}
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel methods via regularization: Example}
+Alternatively, statisticians have been including polynomial terms/interactions for ages
+
+\vsp
+Form
+\[
+k_d(x,y) = (x^{\top}y + 1)^d 
+\]
+
+\vsp
+$k_d$ has $M = {p + d \choose d}$ eigenfunctions
+
+\vsp These \alo{span} the space of polynomials in $\R^{p}$ with degree $d$
+\end{frame}
+\begin{frame}
+\frametitle{Kernel methods via regularization: Example}
+
+\smallCapGreen{Example:} Let $d = p = 2 \Rightarrow M = 6$ and
+\begin{align*}
+k(x,y) & = 1 + 2x_1y_1 + 2x_2y_2 + x_1^2y_1^2 + x_2^2y_2^2 + 2x_1x_2y_1y_2  \\
+& = 
+\sum_{u = 1}^M \Phi_u(x) \Phi_u(y) \\
+& =
+\langle \Phi(x) , \Phi(y) \rangle
+\end{align*}
+where\Note
+\[
+\Phi(y)^{\top}  = (1, \sqrt{2}y_1,\sqrt{2}y_2,y_1^2,y_2^2,\sqrt{2}y_1y_2)
+\]
+\script{See Vapnik (1996) for more on this example}
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel methods: Summary}
+From this example, we see that we could have generated this same RKHS via:
+\begin{itemize}
+\item Specifying the eigenfunctions (or another set of functions with the same span) and projecting
+\item Defining the kernel $k$ explicitly and minimizing
+\item Forming the \alo{feature map} $\Phi$ directly and implicitly defining $k(x,y) = \langle\Phi(x),\Phi(y)\rangle$
+\end{itemize}
+This last technique corresponds to \alg{kernelization}, where inner products in the original covariate
+space are replaced with inner products of \alo{features}
+\end{frame}
+\transitionSlide{Kernel SVMs}
+
+\begin{frame}
+\frametitle{Kernel SVM: A reminder}
+The dual Lagrangian is:
+\[
+\ell_D(\gamma) = \sum_i \gamma_i - \frac{1}{2}\sum_i \sum_{i'} \gamma_i \gamma_{i'} Y_i Y_{i'} \alr{X_i^{\top}X_{i'}}
+\]
+with side conditions: $\gamma_i \in [0,C]$ and $\gamma^{\top}Y = 0$
+
+\vsp
+Let's replace the term $\alr{X_i^{\top}X_{i'}} = \langle X_i, X_{i'} \rangle$ with
+$\langle \Phi(X_i), \Phi(X_{i'}) \rangle$
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel SVMs}
+Typically, specifying $\Phi$ is unnecessary, 
+
+\vsp
+We need only define a \alo{kernel} that is symmetric, positive definite
+
+\vsp
+Some common choices for SVMs:
+\begin{itemize}
+\item \smallCapGreen{Polynomial:} $k(x,y) = (1 + x^{\top}y)^d$
+\item \smallCapGreen{Radial basis:} $k(x,y) = e^{-\lambda \norm{x-y}_{\tau}^\tau}$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Kernel SVMs}
+\alo{Reminder:} the solution form for SVM is
+\[
+\beta = \sum_{i=1}^n \gamma_i Y_i X_i
+\]
+Kernelized, this is
+\[
+\beta = \sum_{i=1}^n \gamma_i Y_i \Phi(X_i)
+\]
+
+\vsp
+Therefore, the induced hyperplane is:
+\[
+f(x) = \Phi(x)^{\top} \beta + \beta_0 = \sum_{i=1}^n \gamma_i Y_i \langle \Phi(x), \Phi(X_i) \rangle + \beta_0
+\]
+
+\vsp
+The final classification is still
+\[
+\hat{Y}(x) = \textrm{sgn}(f(x)) 
+\]
+
+\end{frame}
+
+\begin{frame}
+\frametitle{SVMs via penalization}
+It is important to note that SVMs can be derived from \alo{penalized loss} methods
+
+\vsp
+Writing $f(x) = \Phi(x)^{\top} \beta + \beta_0$, consider
+\[
+\min_{\beta,\beta_0} \sum_{i=1}^n [ 1 - Y_i f(X_i)]_+ + \lambda\norm{\beta}_2^2 /2
+\]
+
+This optimization problem produces the same solution as using $C = 1/\lambda$
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Surrogate losses}
+It is tempting to minimize (analogous to linear regression)
+\[
+\frac{1}{n}\sum_{i=1}^n \mathbf{1}_{Y_i \neq \hat{Y}(x)}(X_i) + \lambda \rho(\beta)
+\]
+for some penalty term $\rho$
+
+\vsp
+However, this is \alo{nonconvex}
+
+\vsp
+\smallCapGreen{Idea:} We can use a \alg{surrogate} loss that mimics this function while still being
+convex
+
+\vsp
+It turns out we have already done that!
+\begin{itemize}
+\item  \smallCapGreen{Hinge:} $[ 1 - Y f(X)]_+$
+\item  \smallCapGreen{Logistic:} $\log(1 + e^{-Y f(X)})$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Surrogate losses}
+\begin{figure}
+\centering
+\includegraphics[width=4in]{../figures/surrogate.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{SVMs in practice}
+\smallCapGreen{General functions:} The basic SVM functions are in the C++ library \alr{libsvm} 
+\vsp
+
+\smallCapGreen{R package:} The \alr{R} package \alr{e1071} calls \alr{libsvm} 
+\vsp
+
+\smallCapGreen{Path algorithm:} \alr{{\tt svmpath}}
+
+\script{Hastie et al (2004)}
+
+\vsp
+
+For a discussion and comparison see Karatzoglou, Meyer (2006).
+\end{frame}
+
+%\frametitle{Sensitivity and Specificity}
+%Now, we can compare doing classification by rounding the Linear Regression model
+%to rounding the GLM.  
+%
+%\vsp
+%We need two concepts:
+%\vsp
+%
+%\emphasis{8cm}{Sensitivity:} {Classifying a person as a `default' given that they 
+%defaulted (this is like correctly rejecting the null hypothesis, i.e. power)}
+%\emphasis{8cm}{Specificity:}{Classifying a person as `no default' given that they did not default 
+%(this is like \textbf{not} committing a type I error)}
+%
+%\begin{table}
+%\begin{tabular}{l|p{1.8cm}p{1.8cm}p{1.8cm}}
+%& Training Error & Training Sensitivity & Training Specificity \\
+%\hline
+%Linear Reg. & 0.033 & 0.000 & 1.000 \\
+%GLM & 0.027 & 0.300 & 0.995
+%\end{tabular}
+%\end{table}
+%\end{frame}
+%
+%
+%\begin{frame}[fragile]
+%\frametitle{More than two levels to the response}
+%You can use logistic regression when your response has more than two levels.  There are two
+%cases:
+%
+%\vsp
+%
+%\emphasis{7.3cm}{Unordered response:}{Called \alg{multinomial logistic regression}.  Essentially, you fit logistic regressions for each level versus  a reference level (examples: \alb{eye color} or \alb{political preference})}
+%\emphasis{7.3cm}{Ordered Response:  } {These are \alg{common slopes} or 
+%\alg{proportional odds model} (examples: \alb{how strongly do you agree with a statement} or \alb{number of malformed limbs in
+%an experiment with mice})}
+%\end{frame}
+%
+%
+\end{document}

@@ -1,0 +1,177 @@
+\documentclass[11pt]{article}
+
+\usepackage{multicol}
+\usepackage{hypernat}
+
+\usepackage{_defsAndPackages675notation}
+
+\usepackage{amsthm,amssymb}
+
+% Bibliography 
+\bibliographystyle{plain}
+
+\usepackage{graphicx}
+\topmargin=0in
+\headheight=0in
+\headsep=0in
+
+\columnsep=-0.28in
+
+\oddsidemargin=0in
+\evensidemargin=0in
+
+\textheight=9in
+\textwidth=6.5in
+
+\footskip=0in
+
+\begin{document}
+
+\baselineskip=13.2pt
+\parindent=0pt
+\parskip=13.2pt
+\pagestyle{empty}
+
+\newcommand{\sd}{\textrm{sd}}
+
+\centerline{\bf \Large STAT675 -- Homework 1}
+\centerline{\bf \large Due: Sept. 11} 
+\begin{enumerate}
+\item 
+\begin{itemize}
+\item[a.] Show that the prediction (also known as generalization) squared-error risk can be written as
+\begin{equation}
+R(f) = \E_{X,Y} (f(X) - Y)^2 = \E_X (f(X) - \E[Y|X])^2 + \E_X[\V[Y|X]].
+\label{eq:bayes}
+\end{equation}
+\item[b.] What does this imply about the Bayes rule for squared error loss?
+%\item[c.] Use equation (\ref{eq:bayes}) to show the approximation/bias/variance(s) decomposition from lecture.
+\end{itemize}
+\newpage
+\item Reminder from lecture:
+assume that we get a new draw of the training data, $\data^0$, such that $\data \sim \data^0$ and
+\[
+\data = ((X_1,Y_1), \ldots, (X_n,Y_n)) \quad \textrm{and} \quad \data^0 = ((X_1,Y_1^0), \ldots, (X_n,Y_n^0))
+\]
+
+
+If we make a small compromise to risk, we can form a sensible suite of risk estimators
+
+
+To wit, letting $Y^0 = (Y_1^0,\ldots,Y_n^0)^{\top}$, define 
+
+\[
+R_{in} = \E_{Y^0 | \data}  \hat\P_{\data^0}  \ell_{\hat{f}}= \frac{1}{n} \sum_{i=1}^n \E_{Y^0 | \data} \ell(\hat{f}(X_i),Y_i^0).
+\]
+
+
+Then the average optimism is
+\[
+\opt = \E_Y [ R_{in} - \train]= \frac{2}{n} \sum_{i=1}^n \textrm{Cov}(\hat f(X_i),Y_i).
+\]
+
+
+Therefore, we get the following estimate of risk
+\[
+ \E_Y R_{in} = \E_Y \train + \frac{2}{n} \sum_{i=1}^n \textrm{Cov}(\hat f(X_i),Y_i),
+\]
+which has unbiased estimator (i.e. $\E_Y \gic =  \E_Y R_{in}$)
+\[
+\gic = \train + \frac{2}{n} \sum_{i=1}^n \textrm{Cov}(\hat f(X_i),Y_i).
+\]
+Our task now is to either estimate or compute $\opt$ to produce $\opthat$ and form
+\begin{equation}
+\gichat = \train + \opthat.
+\label{eq:gic}
+\end{equation}
+
+
+
+\begin{itemize}
+\item[a.] \textbf{Stein's lemma:}
+\begin{itemize}
+\item[i.] Let $Z \sim N(0,1)$ and let $f: \R \rightarrow \R$ be absolutely continuous with derivative $f'$.  Then\footnote{Note:
+we may not return to this, but it turns out this is an if and only if statement}
+\[
+\E[Z f(Z)] = \E[f'(Z)]
+\]
+Show this is true. See \cite{stein1981estimation} for more details.
+\item[ii.] Extend this result to cover an arbitrary normal random variable $X \sim N(\mu,\sigma^2)$.
+\item[iii.]  Suppose\footnote{This notation means $Y$ has mean $\mu$ and variance $\sigma^2I$.} 
+$Y \sim (\mu,\sigma^2I) \in \R^n$ and let $f: \R^n \rightarrow \R^n$.  Show that the expected training error can
+be decomposed as
+\[
+\E||\mu - f(y)||_2^2 = -n\sigma^2 + \E||y - f(y)||_2^2 + 2 \sum_{i=1}^n Cov(Y_i,f_i(Y)).
+\]
+\item[iv.] It is possible to show that for each $i = 1,\ldots,n$, as long as $f_i$ is almost differentiable, then if $X \sim N(\mu,\sigma^2I)$,
+\[
+\frac{1}{\sigma^2} \E[(X-\mu)f_i(X)] = \E[\nabla f_i(X)],
+\]
+where $\nabla f_i(X)$ is the gradient of the $i^{th}$ component of $f$ evaluated at $X$.  Use this fact (which is a multivariate 
+extension of i.) to get an unbiased estimator of the risk.  This is known as Stein's Unbiased Risk Estimator (SURE).  It is a
+generalization of Mallow's Cp.  Note that $\sum_{i=1}^n \frac{\partial f_i}{\partial x_i}(x)$ is known as the divergence of $f$.
+\end{itemize} 
+\item[b.] \textbf{Stein's paradox.}  We will use Stein's lemma to show
+that the usual maximum likelihood estimator $X$ for estimating $\mu$ in $X \sim N(\mu,\sigma^2I) \in \R^n$ is inadmissible\footnote{I'm going to leave 
+it up to you to look up what inadmissible means. As an aside, when writing this problem I realized I don't know if
+this extends to other distributions.  If anyone knows, I'd be happy to listen.} when $n \geq 3$.
+It turns out that 
+\[
+\hat\mu = \left(1 - \frac{d-2}{||X||_2^2}\right) X
+\]
+uniformly dominates $X$.  See \cite{Stein1956Inadmissibility} for the original paper
+and \cite{efron1977stein} for a nontechnical discussion of this point.
+\begin{itemize}
+\item[i.] What is the risk of $X$ as an estimator of $\mu$?
+\item[ii.] Use your result from the previous question to compute the SURE of $\hat\mu$.  Note: this will reduce to
+computing the training error and then the divergence of the estimator.
+\item[iii.] Take the expectation of the SURE for $\hat \mu$ and show that its risk is always lower than that of $X$.  Jensen's 
+inequality will come in handy.  Also, a result\footnote{Known as `Poissonization'.} about $\chi^2$ random variables:  suppose that $W$ is a non-central
+$\chi_{\nu,\delta}^2$ random variable with non-centrality parameter $\delta$ and $\nu$ degrees of freedom.  
+Then $W \sim \chi_{\nu + 2K,0}^2$, where $K \sim Pois(\delta/2)$.
+\end{itemize}
+\item[c.] \textbf{Degrees of freedom.}  Inline with the definitions above, let $Y_1,\ldots,Y_n$ be such that
+$\V Y_i = \sigma^2$ and $Cov(Y_i,Y_{i'}) = \sigma^2 \delta_{i,i'}$ (the Kronecker delta function).  
+Let $g: \R^n \rightarrow \R^n$ be a function that gives be fitted values, ie: $g(Y_1,\ldots,Y_n) = \hat{Y} \in \R^n$.  Then
+\[
+\df(g) = \frac{1}{\sigma^2} \sum_{i=1}^n Cov(Y_i,g_i(Y)) = \frac{1}{\sigma^2} \tr( Cov(Y,g(Y))).
+\]
+Therefore, we can use our results from the previous sections to calculate degrees of freedom for various fitting
+procedures.  Let's do that for
+\begin{itemize}
+\item[i.] Ridge regression
+\item[ii.] For lasso, I don't want you to derive the degrees of freedom.  Instead, look over \cite{tibshirani2012degrees} 
+and see if you can following the general flow of the argument, at least up to the end of section 2.1.  Give an overview 
+of the argument here.
+
+\end{itemize}
+\item[d.]  \textbf{Generalized information criterion (GIC).} 
+The original proposed GIC was in \cite{nishii1984asymptotic} and had the following form.  Assume $Y_i = X_i^{\top} \beta_* + \epsilon_i$, where $\epsilon_i \stackrel{i.i.d}{\sim} N(0,\sigma^2)$.  The main goal was model selection, so let
+$\alpha \in A = \{ \textrm{candidate models} \}$, where this could be all $2^p - 1$ models from $p$ covariates
+for instance.  Then
+\[
+\textrm{GIC}_0(\alpha) = \log(\hat\sigma_{\alpha}^2) + \frac{1}{n} \kappa_n d_{\alpha},
+\]
+where $\hat\sigma_{\alpha}^2$ is the MLE under model $\alpha$, $(\kappa_n)$ is a sequence of numbers, and
+$d_{\alpha}$ is the degrees of freedom from model $\alpha$.  Choosing $\kappa_n = 2$ produces AIC, $\kappa = \log(n)$ 
+produces BIC.  
+\begin{itemize}
+\item[i.] These choices work when $n >> p$. However, when $n \leq p$, this doesn't work at all. Why?
+\item[ii.] Instead, we use equation (\ref{eq:gic}), with $\opthat = \hat\sigma^2 \kappa_n d_{\alpha}/n$ and $\hat\sigma^2$
+is an estimator of the variance (see \cite{zhang2010regularization}) for more information).  Just use the true variance for $\hat\sigma^2$ right now, but know that this is still a very open,
+interesting area of research (see \cite{reid2013study} for a review).  Note that $\kappa_n = 2$ corresponds to AIC with 
+Gaussian errors, but assuming that the variance is known.
+
+Using the simulation in {\tt 1\_simulation.tar}, compare the prediction risk for
+\begin{itemize}
+\item[iia.] Ridge regression using CV, GIC (for $\kappa$ corresponding to AIC and BIC)
+\item[iib.] Lasso, but include consistent cross validation (CCV) as well (algorithm 4 in \cite{feng2013consistent}).
+\end{itemize}
+See the {\tt readme} file, which outlines the simulation.  Also, the definitions of the parameters can be found in Section 3.1 
+in\footnote{As an aside, this is a paper I've been passively writing for a few months.  It is very much not done. I'd like to 
+see it submitted, but I haven't had much time to work on it.  If you get interested in the general idea, let me know.} ``manuscriptInfoCriteriaSimulation.pdf''
+\end{itemize}
+\end{itemize}
+\end{enumerate}
+\bibliography{references}
+\end{document}

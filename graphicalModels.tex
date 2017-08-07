@@ -1,0 +1,467 @@
+\documentclass[12pt]{beamer}
+%\usepackage[usenames,dvipsnames]{xcolor}
+
+\usepackage{_defsAndPackages675notation}
+\usepackage{_defsAndPackages675beamer}
+
+%\DeclareMathSizes{12}{12}{5}{12}
+\newcommand{\parenthetical}[2]{#1  \scriptstyle \alr{( #2)}}
+\date{}
+
+\begin{document}
+
+\title{\alg{Graphical Models}}
+\subtitle{\classTitle}
+
+\begin{frame}
+\maketitle
+%\titlepage
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=1in]{.../figures/CSU_logo2.eps}
+%\end{figure}
+%
+\organization
+%
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Conditional independence}
+The core idea encoded in graphical models are \alo{conditional independence} relations
+
+\vsp
+\alo{A priori} independent causes of an event can become not independent with 
+a new measurement
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Conditional independence}
+
+\smallCapGreen{Example:} Suppose you live in Los Angeles and are on a business trip to New York.
+
+\vsp
+Your phone rings to notify you that your home security system has been activated
+
+\vsp
+Simultaneously, you notice a news report that there has been an earthquake in LA
+
+\vsp
+Given that you know from prior experience that earthquakes sometimes cause false alarms, 
+you feel that an actual burglary is less likely.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Graphs}
+The expression of conditional independence relations can be expressed with a \alg{graph}
+
+\vsp
+A \alg{graph} is a pair $G = \{V,E\}$, where 
+\begin{itemize}
+\item $V$ is a set of \alg{vertices}
+\item $E$ is a set of \alg{edges}
+
+\script{Really, $E$ is a set of (possibly ordered) pairs from $V$}
+\end{itemize}
+\vsp
+
+For our purposes, each vertex corresponds to a \alo{random variable}
+
+\vsp
+Each edge represents some aspect of their \alo{joint distribution}
+
+\script{For our purposes, we will only consider \alg{undirected graphs} and hence the ordering doesn't matter}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Graphs}
+Let $x = (X_1,\ldots,X_p)^{\top} \sim \P$ 
+
+\vsp
+A graph $G$ for $\P$ has $p$ vertices (aka nodes)
+
+
+\vsp
+The crucial aspect is that the \alo{absence} of an edge encodes conditional independence
+
+\[
+\{j,k\} \notin E \Rightarrow X_j \perp X_k | \textrm{rest}
+\]
+\script{This a \alg{Markov property} that is a bit technical in full generality.  See {\tt http://www.stat.cmu.edu/~larry/=sml/GraphicalModels.pdf} for an indepth discussion}
+\vsp
+
+\smallCapGreen{Example:}
+\begin{figure}
+\centering
+\includegraphics[width=4in]{../figures/larryGraphModelSimple.pdf}
+\caption*{$X_1 \perp X_3 | X_2$}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Statistical graphical models}
+The Markov part is tricky as there isn't, in general, a 1-1 map between $\P$ and $G$ 
+
+\vsp
+For our purposes, let's somewhat reductively define the following
+\begin{itemize}
+\item $I(G) = \textrm{all independence statements implied by } G$
+\item $I(\P) = \textrm{all independence statements implied by } \P$
+\item $\mathcal{P}(G) = \{ \P: I(G) \subseteq I(\P)\}$
+\item If $\P \in \mathcal{P}(G)$ then we say that $\P$ is \alg{Markov} to $G$
+\item In this case, $G$ represents a \alo{class} of distributions
+\end{itemize}
+
+\smallCapGreen{Example:} The graph $X_1 \cdots X_2$ has $I(G) = \emptyset$.   All bivariate
+distributions  are in $\mathcal{P}(G)$, including $p(X_1,X_2) = p(X_1)p(X_2)$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Nonparametric statistical graphical models}
+Undirected (Markov) graphical models allow a decomposition into \alg{clique potentials}
+
+\vsp
+A \alg{clique} is a fully connected subgraph
+
+\vsp
+A \alg{maximal clique} is such that it is not contained in any larger clique
+
+\begin{figure}
+\centering
+\includegraphics[width=1.8in,trim= 0 0 0 0,clip]{../figures/cliqueExample.pdf}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Nonparametric statistical graphical models}
+Let $\mathcal{C}$ be the set of all maximal cliques in a graph
+
+\vsp
+\smallCapGreen{Hammersley and Clifford:} A Markov and ``nice'' measure $\P$ can be factored multiplicatively
+as
+\[
+p(X_1,\ldots,X_p) = \prod_{C \in \mathcal{C}} \psi_C(X_C)
+\]
+The $\psi_C$ are known as \alg{clique potentials}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Nonparametric statistical graphical models}
+\begin{figure}
+\centering
+\includegraphics[width=1.8in,trim= 0 0 0 0,clip]{../figures/cliqueExample.pdf}
+\end{figure}
+The family of distributions represented by this graph can be factored as
+\[
+p(X_1,\ldots,X_5) = \psi_{1,2,3} (X_1,X_2,X_3)\psi_{1,4}(X_1,X_4)\psi_{4,5}(X_4,X_5)
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Directed graphical models}
+\begin{figure}
+\centering
+\includegraphics[width=1.8in,trim= 0 0 0 0,clip]{../figures/dagExample.pdf}
+\end{figure}
+The family of distributions represented by this graph can be factored as
+\[
+p(X_1,\ldots,X_5) = p(X_5)p(X_4|X_5)p(X_1 | X_4) p(X_3 |X_1) p(X_2 | X_1,X_3)
+\]
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+\smallCapGreen{Goal:} Given a sample $x_1,\ldots,x_n \sim \P$, we wish to estimate (or less ambitiously, constrain)
+the graph $G$
+\vsp
+
+Using properties of Gaussian distributions, we know that
+\[
+X_j \perp X_k | \textrm{rest} \Leftrightarrow \Omega_{jk} = 0
+\]
+where $\Omega = \Sigma^{-1}$ is the \alg{precision} matrix
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+Suppose we are in low dimensions 
+
+\script{That is, $n >> p$}
+\vsp
+
+We can use the usual MLE to find $\hat\Omega$
+
+\begin{align*}
+\log p(x_1,\ldots,x_n|\Omega)
+&  \propto \log \left( |\Omega|^{n/2} e^{ -\frac{1}{2} \sum_{i=1}^n (x_i - \hat\mu)^{\top}\Omega(x_i - \hat\mu)}\right)\\
+&  \propto \frac{1}{2}\left( \log |\Omega| - n\tr(\Omega S)\right)
+\end{align*}
+where $S$ is the sample covariance
+\script{Here, I've maximized over $\mu$}
+
+\vsp
+This gives $S^{-1} = \hat\Omega$ and we can test where $\Omega_{jk} = 0$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+As usual, use the MLE at your own risk, especially if $n$ isn't extremely large relative to $p$
+
+\vsp
+\smallCapGreen{Example:} Suppose we collect S\& P 500 data from January 1, 2003 to January 1, 2008
+
+\script{This will only be 452 stocks, as we'll only take the intersection of the listing over time}
+
+\vsp
+This gives us $X_j \in \R^{1258}$ for $j = 1,\ldots, 452$
+
+\script{$X_{jt}$ is the price of $j^{th}$ stock on $t^{th}$ day}
+
+\vsp
+Of course, these are autocorrelated, hence we report\footnote{Plus some outlier truncation}
+\[
+X_{jt} = \log(X_{jt}/X_{j,t-1})
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+After estimating $\Omega$, we can plot the resulting graph for various thresholds
+on the size of the entry in $\Omega$
+
+\vsp
+This gives us an idea of some \alo{strength} of conditional independence relations
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+\begin{figure}
+\centering
+\includegraphics[width=3.2in,trim= 0 0 0 0,clip]{../figures/sAndPtruncatedPrecisionMat1.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+\begin{figure}
+\centering
+\includegraphics[width=3.2in,trim= 0 0 0 0,clip]{../figures/sAndPtruncatedPrecisionMat2.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+\begin{figure}
+\centering
+\includegraphics[width=3.2in,trim= 0 0 0 0,clip]{../figures/sAndPtruncatedPrecisionMatLabels.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+There is an \alr{R} package for doing this a bit more formally: \alr{SIN}
+
+\vsp
+The etymology is from terminology rampant in the field of graphical models
+
+\begin{itemize}
+\item \smallCapGreen{Faithfulness:} This occurs when $I(\P) = I(G)$
+\item \smallCapGreen{Moral graph:} The undirected version of a DAG that has the `same' independence
+relations
+\end{itemize}
+\vsp
+
+Hence terms related to morality persist in the field
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+\alr{SIN} is a pseudo-acronym for partitioning the vertices into a(n)
+\begin{itemize}
+\item significant set $S$
+\item indeterminate set $I$
+\item non-significant $N$
+\end{itemize}
+\vsp
+
+This can be thought of as a way for controlling the overall error rate for \alo{incorrect} edge inclusion
+
+\vsp
+\alr{SIN} output two graphs:
+
+\begin{itemize}
+\item A graph whose edges are in $S \cup I$
+\item A graph whose edges are in $S$
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{SIN}
+SIN is comprised of testing the \alg{partial correlation} of each pair of covariates, given the others
+
+\vsp
+In previous work, this testing was done in a \alo{backwards stepwise} fashion
+
+\vsp
+The largest p-value is determined and the edge is removed from the graph
+
+\script{The null-hypothesis is that the correlation coefficient is 0}
+
+\vsp 
+This approach has some obvious flaws 
+
+\script{A clear mis-use of p-values, no control of familiy-wise error rate}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{SIN}
+In the SINful approach, they do the following \script{details omitted}
+
+\begin{enumerate}
+\item Identify that the sample covariance approximately follows a Wishart distribution
+\item Using the delta method $+$ a z-transformation, we get an asymptotic normal for the
+sample partial correlations
+\item Use a Gaussian concentration result to get family-wise p-values
+\item These p-values get partitioned into S, I, and N 
+
+\script{Perhaps using $S = (0,0.05]$, $I = (0.05,.25]$, and $N = (.25,1]$.  Most common is to visualize
+the p-values and subjectively bin them}
+\end{enumerate}
+\script{See Drton, Perlman (2004) for details}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{SIN}
+\script{The stock data doesn't work well with SIN (too high dimesional). Example from help file instead}
+\begin{verbatim}
+data(fowlbones)
+pvals <- holm(sinUG(fowlbones$corr,fowlbones$n))
+plotUGpvalues(pvals)
+\end{verbatim}
+\vsp
+
+Note: the \alr{holm} function implements a technique from a paper in 1979 that `improves 
+p-values while still allowing valid simultaneous testing'
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+\begin{figure}
+\centering
+\includegraphics[width=3.25in,trim= 0 0 0 0,clip]{../figures/sinPlot.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+\begin{figure}
+\centering
+\includegraphics[width=3.25in,trim= 0 0 0 0,clip]{../figures/SINmathExamplePval.pdf}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{Parametric statistical graphical models}
+\begin{table}
+\centering
+\begin{tabular}{cc}
+\includegraphics[width=2.25in,trim= 0 10 0 0,clip]{../figures/SINmathExamplePvalS.pdf} &
+\includegraphics[width=2.25in,trim= 0 10 0 0,clip]{../figures/SINmathExamplePvalSI.pdf} \\
+$S$ & $S,I$
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Regularized statistical graphical models}
+There are two common methods for estimation when $p > n$
+\begin{itemize}
+\item parallel lasso
+
+\script{Meinshausen and Buhlmann (2006)}
+\item Graphical lasso
+
+\script{Banerjee et al.(2008) or Hastie et al.}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parallel lasso}
+This is conceptually quite simple
+
+\begin{enumerate}
+\item For each $j = 1,\ldots, p$, regress $X_i$ on all other variables using lasso
+\item Put an edge between $X_i$ and $X_j$ if each appears in the active set of the other variable
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Graphical lasso}
+This approach takes the usual likelihood
+\begin{align*}
+\log p(x_1,\ldots,x_n|\Omega)
+&  \propto \log \left( |\Omega|^{n/2} e^{ -\frac{1}{2} \sum_{i=1}^n (x_i - \hat\mu)^{\top}\Omega(x_i - \hat\mu)}\right)\\
+&  \propto \frac{1}{2}\left( \log |\Omega| - n\tr(\Omega S)\right)
+\end{align*}
+ and penalizes it
+ \[
+ \min -\frac{1}{2}\left( \log |\Omega| - n\tr(\Omega S)\right) + \lambda \norm{\Omega}_1
+ \]
+ \script{$\norm{\cdot}_1$ is the matrix functional given by the sum of the absolute values of the entries}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Regularized statistical graphical models in R}
+Both can be accomplished with the \alr{huge} package
+\begin{itemize}
+\item parallel lasso
+\begin{verbatim}
+out.parallel  = huge(cov.hat,method = "mb")
+\end{verbatim}
+
+\item Graphical lasso
+\begin{verbatim}
+out.glasso    = huge(cov.hat,method = "glasso")
+\end{verbatim}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parallel lasso}
+\begin{figure}
+\centering
+\includegraphics[width=3.5in,trim= 0 0 0 0,clip]{../figures/parallel.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Graphical lasso}
+\begin{figure}
+\centering
+\includegraphics[width=3.5in,trim= 0 0 0 0,clip]{../figures/glasso.pdf}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{R code}
+\begin{verbatim}
+g = graph.adjacency(adj.mat,mode="undirected",diag=F)
+plot(g, layout=layout.auto,edge.color='black',
+     vertex.size=.1,vertex.label=labels,
+     vertex.frame.color=NA,vertex.label.cex=.3,
+     vertex.label.color=col.vec)
+legend(x=x,y=y,legend=legend,col=col.palette,pch=16)
+\end{verbatim}
+
+There is a nice book called \alo{Graphical models with R}, along with an online document
+with the same title
+\end{frame}
+
+\end{document}
+

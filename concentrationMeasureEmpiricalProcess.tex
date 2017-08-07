@@ -1,0 +1,1444 @@
+\documentclass[12pt]{beamer}
+%\usepackage[usenames,dvipsnames]{xcolor}
+
+\usepackage{_defsAndPackages675notation}
+\usepackage{_defsAndPackages675beamer}
+
+%\DeclareMathSizes{12}{12}{5}{12}
+\newcommand{\parenthetical}[2]{#1  \scriptstyle \alr{( #2)}}
+\date{}
+
+\begin{document}
+
+\title{\alg{Concentration of measure}}
+\subtitle{\classTitle}
+
+\begin{frame}
+\maketitle
+%\titlepage
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=1in]{.../figures/CSU_logo2.eps}
+%\end{figure}
+%
+\organization
+%
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{High level overview}
+The core of modern machine learning theory rests with the following structure:
+
+\vsp
+%Let $(T,d)$ be a metric space\Note.  Define a $\R^q$-valued process (generally, $q = 1$) $(X_t)_{t\in T}$.  Then
+%for all $u$ sufficiently large, we want to find bounds of the form
+%\[
+%\P(\norm{X_t - X_s}_q > u) \leq C\exp\left\{-cf\left(\frac{u}{d(s,t)} \right)\right\}
+%\]
+%This is known as an \alg{increment condition}
+\begin{enumerate}
+\item \smallCapGreen{Concentration inequalities:} Show that a random quantity is close to its mean with 
+high probability
+\begin{enumerate}
+\item Hoeffding's
+\item McDiarmid's
+\item Bernstein's
+\end{enumerate}
+\item \smallCapGreen{Uniform bounds:} Guarantee that a set of random quantities are all simultaneously close 
+to their means with high probability
+\begin{enumerate}
+\item VC-dimension
+\item Rademacher complexity
+\item Covering/bracketing numbers
+\end{enumerate}
+
+\end{enumerate}
+\end{frame}
+%
+%\begin{frame}[fragile]
+%\frametitle{High level overview}
+%The main tools that will be used are
+%\begin{itemize}
+%\item \smallCapGreen{Concentration of measure:} Gives a non-asymptotic bound on tail probability of a stochastic process
+%\item \smallCapGreen{Generic chaining:} Related to the idea of compactness, we can `chain' together bounds 
+%on subsets of $T$.  In particular, we can form bounds for $\E\sup_{t \in T} X_t$
+%\end{itemize}
+%\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Motivation}
+\smallCapGreen{Goal:} (concentration inequalities) $+$ (complexity measure) $=$ uniform coverage
+of a stochastic process (i.e. $\sup_{t \in T} X_t$). 
+\vsp
+
+ When would this be useful?
+
+\vsp
+Suppose we have data $\data$ and a loss function $\ell_f$ and we wish to find a function $\hat{f}$ that can predict
+a new $Y$ from an $X$
+
+\vsp
+Form the excess risk
+\[
+\mathcal{E}(\hat f) = \P\ell_{\hat{f}} - \inf_{f \in\F} \P\ell_{f}
+\]
+and $\hat{f} = \argmin_{f\in\F} \hat{\P} \ell_f$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Recall}
+
+ $\hat{\P} = n^{-1} \sum_{i=1}^n \delta_{X_i}$ is the empirical measure.  
+ 
+ \vsp This can be
+interpreted in two ways:
+
+\begin{itemize}
+\item \smallCapGreen{Expectation:} Let $f$ be a function, then we write
+\[
+\hat\P f = \int f \, d\hat\P = \frac{1}{n}\sum_{i=1}^n f(X_i)
+\]
+\item \smallCapGreen{Measure:} Let $C$ be a (measurable) \alo{set}, then we write
+\[
+\hat\P C = \int \mathbf{1}_C d\hat\P = \frac{1}{n}|\{i: X_i \in C\}|
+\]
+\end{itemize}
+
+\script{These notions are used interchangeably, and motivate using $\P$ for both
+probability and expectation}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Back to motivation}
+Apply the \smallCapGreen{$2-\epsilon$ technique:}
+\begin{align*}
+\mathcal{E}(\hat f) &  = \P\ell_{\hat{f}} - \hat\P\ell_{\hat{f}} + \hat\P\ell_{\hat{f}} - \inf_{f \in\F} \P\ell_{f} \\
+& \leq \P\ell_{\hat{f}} - \hat\P\ell_{\hat{f}} + \hat\P\ell_{f_*} - \P\ell_{f_*} \\
+& \leq 2\sup_{f\in\F} |\P\ell_{f} - \hat\P\ell_{f}|
+\end{align*}
+Where $f_*$ is such that $ \P\ell_{f_*} = \inf_{f \in\F} \P\ell_{f}$
+
+\vsp
+So, fixing an $\epsilon > 0$
+\begin{align*}
+\P(\mathcal{E}(\hat f) > 2\epsilon )   
+& \leq 
+\P( | \sup_{f \in \F} | (\hat \P - \P)\ell_f | > \epsilon) \\
+& \leq
+\frac{\E \sup_{f \in \F} |(\hat\P - \P)\ell_f|}{\epsilon}
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Motivation}
+\smallCapGreen{Conclusion:}
+\[
+\P(\mathcal{E}(\hat f) > 2\epsilon )    \leq
+\epsilon^{-1}\E \sup_{f \in \F} |(\hat\P - \P)\ell_f|
+=
+\epsilon^{-1}\E \norm{\hat\P - \P}_\F
+\]
+We can bound the excess risk of an estimator $\hat f$ by bounding the supremum of the difference between
+the empirical measure and true measure
+
+\vsp
+Note that:
+\begin{itemize}
+\item Using the previous notation, $X_t = (\hat \P - \P)\ell_f$, and $T = \F$
+
+\script{Sometimes the index set is considered $\mathcal{L} = \{ \ell_f : f\in \F\}$}
+\item The stochastic process $\mathbb{G} = \sqrt{n}(\hat \P - \P)$ is the \alg{empirical process}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Empirical process}
+The stochastic process $(\hat \P - \P)\ell_f$ is zero mean and hence we know by the SLLN that for all $f \in \F$
+\[
+(\hat \P - \P)\ell_f \rightarrow 0 \textrm{ a.s}
+\]
+\script{Assuming $\P \ell_f$ exists, of course}
+
+\vsp
+However, this doesn't give us \alo{uniform} control
+
+\script{i.e: this doesn't imply that the supremum goes to zero}
+
+\vsp
+We call an index set $\F$ a \alg{Glivenko-Cantelli class} if
+\[
+\sup_{f \in \F} |( \hat \P - \P)\ell_f| = \norm{\hat\P - \P}_\F \rightarrow 0 \textrm{ a.s}
+\]
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Glivenko-Cantelli: example}
+A classical example is the \alo{empirical CDF}
+\[
+F_n(t) = \frac{1}{n} \sum_{i=1}^n \mathbf{1}_{(-\infty,t]}(X_i) = \hat\P f_t
+\]
+where $f_t(x) = \mathbf{1}_{(-\infty,t]}(x)$
+
+\vsp
+Often, we are attempting to estimate a \alg{functional} of the true CDF with a plug-in version using the 
+empirical CDF
+
+\script{True CDF: $F(t) = \P(X \leq t)$}
+
+\vsp
+\smallCapGreen{Sub Example:} Let $\theta = \theta(\P)$ given by the \alo{median}:
+$\theta = \theta(\P)$ is argmin of $\P(-\infty,x] = \inf_x F(x)$ subject to $F(x) \geq 1/2$
+\vsp
+
+Then, we might estimate $\theta(\P)$ with 
+$\hat\theta = \theta(\hat\P)$ by plugging in $F_n$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Glivenko-Cantelli: example}
+The \alg{Glivenko-Cantelli theorem} says that 
+\[
+\sup_{t \in \R} |F_n(t) - F(t)| \rightarrow 0 \textrm{ a.s.}
+\]
+If we write  $\F = \{f_t:  f_t(x) = \mathbf{1}_{(-\infty,t]}(x), t \in \R\}$, then
+\[
+\sup_{t \in \R} |F_n(t) - F(t)| = \norm{F_n - F}_{\R} = \norm{\hat \P - \P}_\F
+\]
+and hence $\F$ is a Glivenko-Cantelli (G.C.) class.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Glivenko-Cantelli: example}
+\script{Technical condition: $\P(-\infty,t] > 1/2$ for each $t > \theta(\P)$.  This forces a \alo{continuity} property
+that $|$median($\P$) - median($\P$')$| < \epsilon$ if $\P$ and $\P$' are uniformly close.}
+\vsp
+
+\smallCapGreen{Sub Example:} As $\F$ is G.C., for all $\delta > 0$, for $n$ large enough
+\[
+\sup_t | \hat\P(-\infty,t] - \P(-\infty,t]| < \delta
+\]
+Fix $\epsilon > 0$. Choose $\delta$ such that 
+\begin{align*}
+\P(-\infty,\theta-\epsilon] & < \frac{1}{2} - \delta \parenthetical{\quad}{\textrm{This is always possible}}\\
+\P(-\infty,\theta+\epsilon] & > \frac{1}{2} + \delta \parenthetical{\quad}{\textrm{This requires condition}}
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Glivenko-Cantelli: example}
+Now, 
+\[
+\P(-\infty,\hat\theta] > \underbrace{\hat\P(-\infty,\hat\theta] - \delta}_{\textrm{uniform closeness}} \geq 1/2 - \delta
+\]
+Hence, $\hat\theta > \theta - \epsilon$ as BWOC: 
+\[
+\hat\theta \leq \theta - \epsilon \Rightarrow\P(-\infty,\hat\theta]  \leq\P(-\infty,\theta - \epsilon] < 1/2 - \delta
+\]
+\vsp
+
+%Also, $\forall \theta' < \hat\theta$
+%\[
+%\P(-\infty,\theta'] < \hat\P(-\infty,\theta'] + \delta \leq 1/2 + \delta
+%\]
+%
+%\[
+%\theta' < \hat\theta \Rightarrow \theta' < \theta + \epsilon \Rightarrow \hat\theta \leq \theta + \epsilon
+%\]
+%\[
+%\P(-\infty,\hat\theta] > \hat\P(-\infty,\hat\theta] - \delta \geq 1/2 - \delta
+%\] 
+Also, it can be shown that $\hat\theta \leq \theta + \epsilon$
+
+\vsp
+Hence, uniform closeness of $F_n$ to $F$ shows that the sample and populations medians are close
+
+
+\script{Note, we have asked for much more than needed, sometimes this can be too much}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Glivenko-Cantelli: example}
+This gets refined to a rate of convergence by the Dvoretzky-Kiefer-Wolfowitz (DKW) inequality 
+\[
+\P( \norm{F_n - F}_{\infty} > \epsilon) \leq 2e^{-2n\epsilon^2}
+\]
+\script{Both the constants 2 cannot be improved upon (Massart (1990))}
+
+\vsp
+This result, along with the previous discussion gets us a rate of convergence for the median
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Orlicz norms}
+As alluded to previously, this type of theory is driven by the \alo{tails} of the distribution
+This is most commonly phrased in terms of \alg{Orlicz norms}
+
+\vsp
+Let $\psi$ be a non-decreasing, convex function such that $\psi(0) = 0$. Then:
+\[
+\norm{X}_\psi = \inf\{ C > 0: \E \psi\left(  \frac{|X|}{C}\right) \leq 1\}
+\]
+\script{Jensen's inequality shows this is a norm}
+
+\vsp
+There are two main cases
+\begin{itemize}
+\item \smallCapGreen{$L_p$ norm:} $\psi(x) = x^p \Rightarrow \norm{X}_\psi = \norm{X}_p = (\E |X|^p)^{1/p}$
+\item \smallCapGreen{$p$-Orlicz:} $\psi_p(x)  = e^{x^p} - 1$ 
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Orlicz norms}
+Two important facts:
+\begin{itemize}
+\item $\norm{X}_{\psi_p} \leq \norm{X}_{\psi_q}(\log 2)^{1/q - 1/p}$, for $p \leq 2$
+\item $\norm{X}_{p} \leq p!\norm{X}_{\psi_1}$
+\end{itemize}
+\script{This allows us to interchange results about various norms, as long as we don't care about constants}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Orlicz norms}
+By Markov's inequality
+\begin{align*}
+\P(|X| > x) & \leq \frac{\E \psi(|X|)/\norm{X}_{\psi}}{\psi(x)/\norm{X}_{\psi}} \\
+& \leq
+\frac{1}{\psi(x)/\norm{X}_{\psi}} \\
+& =
+\begin{cases}
+\norm{X}_px^{-p} & \textrm{ if } \psi(x) = x^p \\
+\frac{1}{e^{(x/\norm{X}_{\psi})^p}-1}  \asymp e^{-(x/\norm{X}_{\psi})^{p}}&  \textrm{ if } \psi(x) = \psi_p(x)
+\end{cases}
+\end{align*}
+Hence, Orlicz norms allow us to encode the tail behavior of a random variable
+
+\vsp
+In fact, it works as an if and only if:
+
+\vsp
+If $\P(|X| > x) \leq C e^{-cx^p}$ then $\norm{X}_{\psi_p} \leq ( (1 + C)c^{-1})^{1/p} < \infty$
+\end{frame}
+
+\transitionSlide{Concentration inequalities}
+
+\begin{frame}[fragile]
+\frametitle{General form}
+For showing results about empirical processes or performance guarantees for algorithms, we want results of the form
+\[
+\P\left(|f(Z_1,\ldots,Z_n) - \mu_n(f)| > \epsilon\right) < \delta_n
+\]
+where $\delta_n\rightarrow 0$ and $\mu_n(f) = \E f(Z_1,\ldots,Z_n)$.
+
+\vsp
+For statistical learning theory, we need \alo{uniform} bounds
+\[
+\P\left(\sup_{f \in \F} |f(Z_1,\ldots,Z_n) - \mu_n(f)| > \epsilon\right) < \delta_n
+\]
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hoeffding's inequality}
+Suppose $\mu = \E Z < \infty$ and $\P(Z \geq 0) = 1$.  Then for any $\epsilon > 0$
+\[
+\E Z = \int_0^\infty Z d\P \geq \int_\epsilon^\infty Z d\P \geq \epsilon \int_\epsilon^\infty  d\P = \epsilon \P(Z > \epsilon)
+\]
+Yielding \alg{Markov's inequality}
+
+\vsp
+This can be transformed to \alg{Chebyshev's inequality} by using the variance
+\[
+\P(|Z - \mu| > \epsilon) \leq \frac{\sigma^2}{\epsilon^2} \Rightarrow \P(|\overline{Z} - \mu| > \epsilon) \leq \frac{\sigma^2}{n\epsilon^2}
+\]
+
+\smallCapGreen{Observation:} This is nice, but does not decay exponentially fast.  However, it only makes a second moment
+assumption
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hoeffding's inequality}
+A different transformation occurs via a \alg{Chernoff bound}.  For any $t > 0$
+\[
+\P(Z > \epsilon) = \P\left( e^{tZ} > e^{t\epsilon}\right) \leq e^{-t\epsilon}\E[e^{tZ}]
+\]
+\script{This is the moment generating function.  Here we see increasing moment conditions giving tighter bounds}
+
+\vsp
+This can be minimized over $t$ as it is arbitrary
+\[
+\P(Z > \epsilon)  \leq \inf_{t > 0} e^{-t\epsilon}\E[e^{tZ}]
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hoeffding's inequality}
+This is the main content of the paper Hoeffding (1963)
+
+\vsp
+\smallCapGreen{Hoeffding's lemma:}
+ Suppose $Z \in [a,b]$, then for any $t$
+\[
+\E[e^{tZ}] \leq e^{t\mu + t^2(b-a)^2/8}
+\]
+
+\vsp
+\smallCapGreen{Proof idea:} 
+\[
+\E e^{tZ} \leq -\frac{a}{b-a}e^{tb} + \frac{b}{b-a}e^{ta} = E^{g(u)}
+\]
+where $u = t(b-a)$. Write down Tayloy's theorem for $g$ up to order 2 to get bound.
+
+\script{The punchline: the bound is driven by a worst case}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hoeffding's inequality}
+\smallCapGreen{Hoeffding's inequality:}
+\[
+\P\left( |\overline{Z} - \mu| > \epsilon\right) \leq 2e^{-2n\epsilon^2/(b-a)^2}
+\]
+\smallCapGreen{Proof sketch:} Let $Z$ be zero mean
+\begin{align*}
+\P\left( \overline{Z} > \epsilon\right)
+& 
+=
+\P\left( e^{t\overline{Z}} > e^{t\epsilon}\right) \\
+& \leq e^{-t\epsilon} \E e^{t\overline{Z}} \\
+& = e^{-t\epsilon} \prod_{i=1}^n\E e^{tn^{-1}Z_i} \\
+& \leq
+e^{-t\epsilon}e^{(t/n)^2(b-a)^2/8} \parenthetical{\quad}{\textrm{Now, minimize over $t$ and symmetrize}}
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hoeffding's inequality: Generalizations}
+We can let the upper and lower limits change with $i$: $Z_i \in [a_i,b_i]$
+
+\vsp
+Also, we can invert this probability statement into a PAC bound:  with probability at least $1-\delta$
+\[
+|\overline{Z} - \mu| \leq \sqrt{\frac{c}{2n}\log\left(\frac{2}{\delta}\right)}
+\]
+where $c = n^{-1}\sum_i (b_i - a_i)^2$
+
+\vsp
+Compare to Chebyshev, which has growth
+\[
+|\overline{Z} - \mu| \leq \sqrt{\frac{\sigma^2}{n\delta}}
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hoeffding's inequality: Example}
+Let $Y_i \in \{0,1\}$, $X_i \in \R^p$ and $h:\R^p \rightarrow \{0,1\}$ be a hypothesis.
+\vsp
+
+Define the training error to be
+\[
+\hat{R}(h) = \frac{1}{n} \sum_{i=1}^n \mathbf{1}(Y_i \neq h(X_i))
+\]
+and 
+\[
+R(h) = \P (Y_i \neq h(X_i))
+\]
+
+Then, $\hat{R}(h) - R(h)$ is zero mean and in the interval $[-1,1]$:
+\[
+\hat{R}(h) - R(h) \leq \sqrt{\frac{1}{n}\log\left(\frac{2}{\delta}\right)}
+\]
+with high probability (w.h.p)
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Refined Hoeffding's inequality}
+The previous result was restricted to sample means.  
+
+\vsp
+This isn't an essential part of the result, however, and is removed in a generalization
+known as \alg{McDiarmid's inequality}
+
+\vsp
+Suppose that\footnote{Here, if we write $z$ or $Z$, it will either mean the $n$-vector or a generic $z_i$ or $Z_i$}
+\[
+\sup_{z_1,\ldots,z_n,z_i'} \left| f(z) - f(z_1,\ldots,z_{i-1},z_i',z_{i+1},\ldots,z_n) \right| \leq c_i
+\]
+
+Then
+\[
+\P\left( |f(Z) - \E f(Z)| > \epsilon\right) \leq 2e^{-2\epsilon^2/\sum_{i=1}^nc_i}
+\]
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{McDiarmid's inequality: Example}
+Let $f(Z) = \sup_A|\hat \P(A) - \P(A)|$.  
+
+\begin{align*}
+|f(Z) - f(Z') |
+& = 
+\left|\sup_A|\hat \P(A) - \P(A)|   - \sup_A|\hat \P'(A) - \P(A)| \right| \\
+& \leq 
+\sup_A\left||\hat \P(A) - \P(A)|   - |\hat \P'(A) - \P(A)| \right| \\
+& \leq
+\sup_A\left| \hat \P(A) - \P(A)- (\hat \P'(A) - \P(A)) \right| \\
+& =
+\sup_A\left| \hat \P(A) - \hat \P'(A) \right|  \parenthetical{\quad}{| \,|a| - |b|\,|\leq |a - b|}
+\end{align*}
+\script{Either $Z_i$ is still in $A$ and nothing changes, or $Z_i$ is no longer in $A$ and hence the difference is $1/n$}
+
+\vsp
+Therefore
+\[
+\P\left( |f(Z) - \E f(Z)| > \epsilon\right) \leq 2e^{-2n\epsilon^2}
+\]
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Sharper inequalities}
+These previous results don't used any information about \alo{where} the probabilities mass lies
+
+\vsp
+Hoeffding's inequality is driven by the worst case: a R.V. that puts all of its mass at the boundaries
+
+\vsp
+If the variance of $Z_i$ is small, we can get sharper inequalities 
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Sharper inequalities}
+
+This idea is that $\sum_{i=1}^n Z_i$ it approximately normally distributed with variance $v = \sum_{i=1}^n \V Z_i$
+
+\vsp
+The tails of a $N(0,v)$ are of order $e^{-x^2/(2v)}$
+
+\vsp
+\alg{Bernstein's inequality} gives a tail bound that is a combination of a normal and a \alo{penalty} for non-normality
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{Sharper inequalities}
+
+\smallCapGreen{Lemma:}
+Suppose that $|X| < c$ and $\E X = 0$. Then for any $t > 0$
+\[
+\E[e^{tX}] \leq \exp\left\{ t^2 \sigma^2 \left( \frac{e^{tc} - 1 -tc}{(tc)^2} \right) \right\}
+\]
+where $\sigma^2 = \V X$
+
+\vsp
+\smallCapGreen{Idea:} The main part of the proof relies on the inequality: for $r \geq 2$
+\[
+\E X^r = \E X^{r-2}X^2 \leq c^{r-2}\sigma^2
+\]
+
+\script{all higher moments than the variance are killed by the a.s. bound, while the first two moments
+are computed as usual}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Sharper inequalities}
+\smallCapGreen{Bernstein's inequality:}
+If $|Z_i| \leq c$ a.s. and $\E Z_i = \mu$, then for all $\epsilon > 0$
+\[
+\P\left( |\overline{Z} - \mu| > \epsilon\right) \leq 2e^{-\frac{n\epsilon^2}{2\sigma^2 + 2c\epsilon/3}}
+\]
+where $\sigma^2 = \frac{1}{n} \sum_{i=1}^n\V Z_i$
+\vsp
+
+Compare to Hoeffding's:
+\[
+\P\left( |\overline{Z} - \mu| > \epsilon\right) \leq 2e^{-\frac{n\epsilon^2}{2c^2}}
+\]
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Sharper inequalities}
+\begin{itemize}
+\item If $\sigma^2 >> 2c\epsilon/3$, then 
+\[
+\log(\textrm{Bernstein}) \asymp -\frac{n\epsilon^2}{2\sigma^2} \leq -\frac{n\epsilon^2}{4c^2}  \asymp \log(\textrm{Hoeffding})
+\]
+\item If $\sigma^2 << 2c\epsilon/3$, then 
+\[
+\log(\textrm{Bernstein}) \asymp -\frac{3n\epsilon^2}{4c\epsilon} =  -\frac{3n\epsilon}{4c} \leq -\frac{n\epsilon^2}{4c^2}  \asymp \log(\textrm{Hoeffding})
+\]
+\end{itemize}
+
+\smallCapGreen{Note:}  This implies that the Bernstein bound is like an exponential for large $\epsilon$
+and normal for small $\epsilon$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bernstein's inequality}
+There is a related \alo{moment} version of Bernstein's inequality:
+
+\vsp
+All that is really required out of the almost sure boundedness of $Z_i$ is bounds for the moments
+
+\vsp
+Suppose that $Z_i$ are such that $\E|Z_i|^m \leq m!M^{m-2}c_i/2$ for all $m \geq 2$ and constants $M, c_i$.  Then
+\[
+\P\left( |\overline{Z} - \mu| > \epsilon\right) \leq 2e^{-\frac{n\epsilon^2}{2\sigma^2 + 2c\epsilon}}
+\]
+for $\sigma^2 \geq \frac{1}{n} \sum_{i=1}^n c_i$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bernstein's inequality}
+The most useful part of Bernstein's inequality is the associated PAC bound
+
+\vsp
+With probability at least $1-\delta$ 
+\[
+|\overline{Z} - \mu| \leq \sqrt{\frac{2\sigma^2\log(1/\delta)}{n}} + \frac{2c\log(1/\delta)}{3n}
+\]
+\script{$|Z_i| \leq c$, $\sigma^2 = n^{-1} \sum_{i=1}^n \V Z_i$}
+
+\vsp
+In particular, if the variance is small enough:
+\[
+\sigma^2 \leq \frac{2c^2\log(1/\delta)}{9n}
+\quad \Rightarrow \quad |\overline{Z} - \mu| \leq \frac{4c\log(1/\delta)}{3n}
+\]
+\script{That is, we get a $n$-decay instead of $\sqrt{n}$-decay}
+\end{frame}
+
+\transitionSlide{Bounding maximums}
+
+\begin{frame}[fragile]
+\frametitle{Finite maximums}
+Recall that 
+\begin{align*}
+\P(|X| > x) 
+& \leq
+\begin{cases}
+\norm{X}_px^{-p} & \textrm{ if } \psi(x) = x^p \\
+\frac{1}{e^{(x/\norm{X}_{\psi})^p}-1}  \asymp e^{-(x/\norm{X}_{\psi})^{p}}&  \textrm{ if } \psi(x) = \psi_p(x)
+\end{cases}
+\end{align*}
+
+Hence, bounds on the $\sup$ of a norm, provide bounds on the probability 
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Finite maximums}
+For the $L_p$ norm, a straight-forward bound exists
+
+\vsp
+Suppose that we have the process $X_t$ on $|T| < \infty$
+
+\vsp
+Using the fact that $\max |X_t|^p \leq \sum |X_t|^p$, it follows that
+\begin{align*}
+\norm{\max_{t \in T} X_t}_p 
+& =
+\left( \E \max_{t\in T} |X_t|^p \right)^{1/p}  \\
+& \leq 
+\left(  \sum_{t\in T} \E|X_t|^p \right)^{1/p}  \\
+ & \leq
+|T|^{1/p} \max_{t\in T} \norm{X_t}_p 
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Finite maximums}
+This continues to hold, but with more complicated proof, for many Orlicz norms
+
+\vsp
+Under some technical conditions on $\psi$ that include $\psi_p$ 
+\[
+\norm{\max_{t \in T} X_t}_\psi \leq K \psi^{-1}(|T|) \max_{t \in T} \norm{X_t}_\psi
+\]
+Here, $K$ only depends on $\psi$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Finite maximums}
+Some observations:
+
+\begin{itemize}
+
+\item As $\psi_p^{-1}(|T|) = (\log(1+|T|))^{1/p}$, we get a \alo{logarithmic} increase in $|T|$ while using the $p$-Orlicz norm,
+compared to \alo{polynomial} for $L_p$
+
+\item 
+This conversion is useless when $|T| = \infty$.  This case can be handled via \alg{generic chaining} whereby each R.V.
+is written as a sum of parts of the index space where
+\begin{itemize}
+\item The R.Vs have low correlation between partitions
+\item There aren't too many in each partition
+\end{itemize}
+\end{itemize}
+For a random stochastic process $(X_t)_{t\in T}$, the number of \alo{links} in the chain depends on the (metric) entropy
+of $T$
+
+\vsp
+This is quantified via \alg{covering}, \alg{packing}, and \alg{bracketing} numbers
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Covering and packing numbers}
+A pseudo-metric space $(T,d)$ is a set with a function $d:T\times T \rightarrow [0,\infty)$ such that
+\begin{enumerate}
+\item $d(t,t) = 0$
+\item $d(s,t) = d(t,s)$
+\item $d(s,u) \leq d(s,t) + d(t,u)$
+\end{enumerate} 
+\script{The pseudo part comes from not insisting that $d(s,t) = 0 \Rightarrow t=s$}
+\vsp
+
+\smallCapGreen{Example:} Define the metric related to the empirical measure
+\[
+d(f,g) = \frac{1}{n}\sum_{i=1}^n |f(Z_i) - g(Z_i)|
+\]
+Then $d$ is a pseudo-metric, but not a metric
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Covering numbers}
+An $\epsilon$-\alg{cover} is a set $\tilde{T}$ comprised of $\epsilon$-balls such that $T \subseteq \tilde{T}$.
+The \alg{covering number} of $T$ is:
+
+\[
+N(\epsilon,T,d) = \min\{|\tilde{T}|: \tilde{T} \textrm{ is an } \epsilon-\textrm{cover}\}
+\]
+Note that 
+\begin{itemize}
+\item $T$ is \alg{totally bounded} if $N(\epsilon,T,d) < \infty$ for all $\epsilon > 0$
+\item The function $\epsilon \mapsto \log N(\epsilon,T,d)$ is the \alg{metric entropy} of $T$
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Packing numbers}
+An \alg{$\epsilon$-packing} of $T$ is a subset $\tilde{T}$ comprised of non-overlapping $\epsilon$-balls.
+The \alg{packing number} is
+\[
+M(\epsilon,T,d) = \max\{ |\tilde{T}| : \tilde{T} \textrm{ is an } \epsilon-\textrm{packing of } T\}
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Covering and packing numbers}
+For almost all purposes, the difference between these two concepts are unimportant:
+
+\vsp
+For instance: $\forall \epsilon > 0$
+\[
+M(\epsilon) \leq N(\epsilon)
+\]
+
+\vsp
+Related lower bounds for $M$ in terms of $N$ are possible with scalar transformations of $\epsilon$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Covering and packing numbers}
+Computing either covering or packing numbers can be very difficult
+
+\vsp
+I advise looking up known results if you go this route, such as
+\begin{itemize}
+\item Covering numbers of the unit ball of $\R^d$ (such as with ridge or lasso)
+\item Compact sets of functions
+\end{itemize}
+\end{frame}
+
+
+\transitionSlide{Examples}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk}
+Suppose we want to minimize $\hat\P\ell_f = n^{-1} \sum_{i=1}^n |f(X_i) - Y_i|^2$ over a set of functions $\F_n$
+
+\vsp
+The main tool in showing consistency/rates of convergence for such estimators is to show
+that the \alo{empirical risk} looks like the \alo{true risk}, uniformly over $\F_n$:
+\[
+\sup_{f \in \F_n} \left| \hat\P\ell_f - \P\ell_f \right| \rightarrow 0 \textrm{ a.s.}
+\]
+It's easier to generate the set of functions\footnote{Often, $\mathcal{L}_n$ is closed} $\mathcal{L}_n =\{\ell_f : f\in \F_n\}$ and look at
+\[
+\sup_{\ell \in \mathcal{L}_n} \left| \hat\P\ell - \P\ell \right|
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+Using Hoeffding's inequality shows that if $\ell(Z) \in [0,b]$ a.s., then
+\[
+\P\left( \left|  \hat\P\ell - \P\ell \right| > \epsilon \right) \leq 2 \exp\left\{ -\frac{2n\epsilon^2}{b^2}\right\}
+\]
+By a union bound (with $\mathcal{L}$ finite)
+\[
+\P\left(\sup_{\ell \in \mathcal{L}_n} \left|  \hat\P\ell - \P\ell \right| > \epsilon \right) \leq 2 |\mathcal{L}_n| \exp\left\{ -\frac{2n\epsilon^2}{b^2}\right\}
+\]
+\script{$\P \cup_{j=1}^J A_j \leq \sum_{j=1}^J \P(A_j)$}
+
+\vsp
+This pairing is quite common in basic theory
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+This gives us an \alo{in probability} convergence
+
+\vsp
+This can be strengthened to an \alo{almost sure} convergence via the \alg{Borel-Cantelli} lemma
+
+\vsp
+If $|\mathcal{L}_n|$ grows slowly enough for
+\[
+\sum_{n=1}^\infty |\mathcal{L}_n| \exp\left\{ -\frac{2n\epsilon^2}{b^2}\right\} < \infty
+\]
+Then
+\[
+\sup_{\ell \in \mathcal{L}_n} \left| \hat\P\ell - \P\ell \right| \rightarrow 0 \textrm{ a.s.}
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+Though this will work for some situations, $|\mathcal{L}_n|$ is really infinite
+
+\vsp
+In this case, the goal becomes to find a finite set $\mathcal{L}_{n,\epsilon}$ such that
+\begin{align*}
+\left\{ \sup_{\ell \in \mathcal{L}_n} \left| \hat\P\ell - \P\ell \right| > \epsilon \right\} & \subseteq
+\left\{ \sup_{\ell \in \mathcal{L}_{n,\epsilon}} \left| \hat\P\ell - \P\ell \right| > \epsilon' \right\}
+\end{align*}
+Letting $\epsilon'$ be a function of $\epsilon$ but not $n$
+
+\vsp
+We construct $\mathcal{L}_{n,\epsilon}$ using covering numbers with respect to different metrics $\norm{\cdot}$
+
+\script{This corresponds to $(T,d) \leftrightarrow (\mathcal{L}_{n},\norm{\cdot})$}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+The most  basic choice is 
+\[
+d_{\infty}(\ell,\ell') = \norm{\ell - \ell'}_{\infty} = \sup_z| \ell(z) - \ell'(z)|
+\]
+An $\epsilon$-cover of $\mathcal{L}_n$ with respect to $d_{\infty}$ is such that for every $\ell \in \mathcal{L}_n$,
+$\exists \ell_{\epsilon} \in \mathcal{L}_{n,\epsilon}$ such that
+\[
+d_{\infty}(\ell,\ell_\epsilon) = \norm{\ell - \ell_\epsilon}_{\infty} = \sup_z| \ell(z) - \ell_\epsilon(z)| < \epsilon
+\]
+
+\vsp
+We'll define the $L_{\infty}$ \alo{covering number} 
+
+\[
+N_\infty(\epsilon,\mathcal{L}_n) = N_\infty(\epsilon,\mathcal{L}_n,\norm{\cdot}_\infty)
+\]
+to be the minimal $\epsilon$-cover
+
+\script{Alternatively known as the uniform covering number (not to be confused with uniform convergence)}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+Putting this together, we get
+\[
+\P\left(\sup_{\ell \in \mathcal{L}_n} \left|  \hat\P\ell - \P\ell \right| > \epsilon \right) \leq 2 N_\infty(\epsilon/3,\mathcal{L}_n) \exp\left\{ -\frac{2n\epsilon^2}{9b^2}\right\}
+\]
+\smallCapGreen{Basic idea:} Let $\mathcal{L}_{n,\epsilon/3}$ be a minimal $\epsilon/3$-cover of $\mathcal{L}_n$.
+Fix a $\ell \in \mathcal{L}_n$, then $\exists \ell' \in \mathcal{L}_{n,\epsilon/3}$ such that $\norm{\ell - \ell'}_\infty < \epsilon/3$
+\begin{align*}
+\left|  \hat\P\ell - \P\ell \right|  
+& \leq
+\left|  \hat\P\ell - \hat\P\ell' \right|  + \left|  \hat\P\ell' - \P\ell' \right|   + \left|  \P\ell' - \P\ell \right|  \\
+& \leq
+\norm{\ell - \ell'}_{\infty} + \left|  \hat\P\ell' - \P\ell' \right|   + \norm{\ell - \ell'}_{\infty} \\
+& \leq
+2\epsilon/3 + \left|  \hat\P\ell' - \P\ell' \right|   
+\end{align*}
+Now, we do as before, but with $N_\infty(\epsilon/3,\mathcal{L}_n) = |\mathcal{L}_{n,\epsilon/3}|$ 
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+Unfortunately, $N_\infty(\epsilon/3,\mathcal{L}_n)$ is often too large for
+\[
+\sum_{n=1}^\infty N_\infty(\epsilon/3,\mathcal{L}_n) \exp\left\{ -\frac{2n\epsilon^2}{9b^2}\right\} < \infty
+\]
+\script{The uniform norm is quite strong}
+
+\vsp
+At issue is that
+\[
+\left|  \hat\P\ell - \hat\P\ell' \right|    + \left|  \P\ell' - \P\ell \right|  
+ \leq
+\norm{\ell - \ell'}_{\infty}  + \norm{\ell - \ell'}_{\infty} 
+\]
+is quite coarse
+
+\vsp
+A solution is to appeal to \alo{random $L_1$ norm covers}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+The idea is based around fictively creating a \alg{ghost sample} $Z_{1},\ldots,Z_{2n}$  such that
+$Z_i \stackrel{i.i.d}{\sim} \P$ for $i=1,\ldots,2n$
+
+\vsp
+Now, we will think of $\P \ell \approx \hat\P_{n+1}^{2n} \ell$ and form
+\[
+\left\{ \sup_{\ell \in \mathcal{L}_n} \left| \hat\P\ell - \ \hat\P_{n+1}^{2n}\ell\right| > \epsilon \right\}  \subseteq
+\left\{ \sup_{\ell \in \mathcal{L}_{n,\epsilon}} \left| \hat\P\ell -  \hat\P_{n+1}^{2n}\ell \right| > \epsilon' \right\}
+\]
+where now $\mathcal{L}_{n,\epsilon}$ is going to be a data-dependent set 
+
+\script{i.e. a random variable}
+
+\vsp
+Now, we cover $\mathcal{L}_n$ with $\epsilon$-covers with respect to
+\[
+\norm{\ell - \ell'}_{n} = \int |\ell - \ell'| d\hat\P_{1}^{n}
+\]
+with covering number $N_1(\epsilon,\mathcal{L}_n) = N(\epsilon,\mathcal{L}_n,\norm{\cdot}_{n})$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+The randomness of the covering number can be dealt with by following four steps
+
+\begin{enumerate}
+\item \smallCapGreen{Ghost sample}
+\item \smallCapGreen{Introduction of additional randomness} via Rademacher random variables
+\item \smallCapGreen{Conditioning} to introduce covering number
+\item \smallCapGreen{Hoeffding}
+\end{enumerate}
+Let's go over each of these briefly
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+\smallCapGreen{Ghost sample:} It can be shown that for $n \geq 2b^2/\epsilon^2$
+\[
+\P\left(\sup_{\ell \in \mathcal{L}_n} \left|  \hat\P\ell - \P\ell \right| > \epsilon \right) 
+\leq 
+2\P\left(\sup_{\ell \in \mathcal{L}_n} \left|  \hat\P\ell - \hat\P_{n+1}^{2n}\ell \right| > \epsilon/2 \right) 
+\]
+\script{See pages 136-138 of Gy\"orfi et al. (2002) for details}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+\smallCapGreen{Introduction of additional randomness:} 
+As all the R.V.s are iid, their difference is invariant to a random sign change with Rademacher R.V.s
+\begin{align*}
+\lefteqn{\P\left(\sup_{\ell \in \mathcal{L}_n} \left|  \hat\P\ell - \hat\P_{n+1}^{2n}\ell \right| > \frac{\epsilon}{2}\right) } \\
+& =
+\P\left(\sup_{\ell \in \mathcal{L}_n} \left| \sum_{i=1}^n \epsilon_i \left(\ell(Z_i) - \ell(Z_{i + n})\right) \right| > \frac{n\epsilon}{2} \right)  \\
+& \leq
+\P\left(\sup_{\ell \in \mathcal{L}_n} \left| \sum_{i=1}^n \epsilon_i \ell(Z_i)\right| > \frac{n\epsilon}{4}\right)
++
+\P\left(\sup_{\ell \in \mathcal{L}_n} \left| \sum_{i=1}^n \epsilon_i \ell(Z_{i+n})\right| > \frac{n\epsilon}{4}\right)\\
+& =
+2\P\left(\sup_{\ell \in \mathcal{L}_n} \left| \sum_{i=1}^n \epsilon_i \ell(Z_i)\right| > \frac{n\epsilon}{4}\right)
+\end{align*}
+\script{This is known as \alg{symmetrization}.  We'll return to this again}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+\smallCapGreen{Conditioning:} To introduce the covering number, observe that
+\begin{align*}
+\lefteqn{\P\left(\sup_{\ell \in \mathcal{L}_n} \left| \sum_{i=1}^n \epsilon_i \ell(Z_i)\right| > \frac{n\epsilon}{4}\right)} \\
+& =
+\E_Z\P_\epsilon\left(\exists \ell \in \mathcal{L}_n : \left| \sum_{i=1}^n \epsilon_i \ell(z_i)\right| > \frac{n\epsilon}{4} \bigg| (Z_i)_{i=1}^n = (z_i)_{i=1}^n\right)
+\end{align*}
+Now, we can apply the complexity part: Let $\mathcal{L}_{n,\epsilon/8}$  be an $\epsilon/8$-cover of $\mathcal{L}_n$
+with respect to $\norm{\cdot}_{n}$:
+\[
+\frac{1}{n}\sum_{i=1}^n |\ell(z_i) - \ell'(z_i)| < \epsilon/8
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+\smallCapGreen{Conditioning:} Fix an $\ell$ and find its $\ell' \in \mathcal{L}_{n,\epsilon/8}$,
+\begin{align*}
+\left| \frac{1}{n}\sum_{i=1}^n \epsilon_i \ell(z_i)\right| 
+& \leq
+\left| \frac{1}{n}\sum_{i=1}^n \epsilon_i \ell'(z_i)\right| + \epsilon/8
+\end{align*}
+Showing (conditional on $(Z_i)_{i=1}^n = (z_i)_{i=1}^n$)
+\begin{align*}
+\lefteqn{\P\left(\exists \ell \in \mathcal{L}_{n,\epsilon/8} : \left| \frac{1}{n}\sum_{i=1}^n \epsilon_i \ell(z_i)\right| + \epsilon/8 > \frac{\epsilon}{4} \right)} \\
+& \leq 
+N_1(\epsilon,\mathcal{L}_n) \max_{\ell \in \mathcal{L}_{n,\epsilon/8}}
+\P\left( \left| \frac{1}{n}\sum_{i=1}^n \epsilon_i \ell(z_i)\right| >\frac{\epsilon}{8}\right)
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+\smallCapGreen{Hoeffding:} Lastly, we just need to bound 
+\[
+\P\left( \left| \frac{1}{n}\sum_{i=1}^n \epsilon_i \ell(z_i)\right| >\frac{\epsilon}{8}\right)
+\]
+This can be done with Hoeffding
+
+\script{Recall, though, that Bernstein's tends to give better bounds}
+\[
+\P\left( \left| \frac{1}{n}\sum_{i=1}^n \epsilon_i \ell(z_i)\right| >\frac{\epsilon}{8}\right)
+\leq
+2\exp\left\{- \frac{2n(\epsilon/8)^2}{(2b)^2} \right\}
+\leq
+2\exp\left\{- \frac{2n\epsilon^2}{128b^2} \right\}
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+\smallCapGreen{In conclusion:}
+\[
+\P\left(\sup_{\ell \in \mathcal{L}_n} \left|  \hat\P\ell - \P\ell \right| > \epsilon \right) 
+\leq 
+8\E N_1(\epsilon,\mathcal{L}_n) \exp\left\{- \frac{2n\epsilon^2}{128b^2} \right\}
+\]
+
+\vsp
+Now, we need to know the expected $L_1$ covering number
+
+\vsp
+This can be difficult to calculate.  Hence, we can turn to a few notions
+\begin{itemize}
+\item VC dimension
+\item Bracketing numbers
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+Recall the VC dimension of a class of sets $\mathcal{A}$
+is the largest number of points $\mathcal{G}_n$ which we can shatter
+
+\script{That is, the largest $n$ such that  $|\{G \subset \mathcal{G}_n : G = \mathcal{G}_n \cap A, A \in \mathcal{A}\}| = 2^n$} 
+\vsp
+
+Let 
+\[
+\mathcal{G} = \{ (z,t) \in \R^{p+1}\times\R: t \leq \ell(z), \ell \in \mathcal{L}_n\}
+\]
+\script{This is the set of all \alg{subgraphs} of functions in $\mathcal{L}_n$}
+
+\vsp
+We can bound the $L_q$ packing numbers by $VC_{\mathcal{G}} =$  VC dimension of $\mathcal{G}$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+Let $\nu$ be a probability measure on $\R^{p+1}$ and let $\sup_{\ell \in \mathcal{L}_n} \norm{\ell}_{\infty} \leq b$.  Then
+for any $\epsilon \in (0,b/4)$
+\[
+M(\epsilon,\mathcal{L}_n,\norm{\cdot}_{L_q(\nu)}) \leq 
+3
+\left(
+\frac{2eb^q}{\epsilon^q}\log\left( \frac{3eb^q}{\epsilon^q}\right) 
+\right)^{VC_{\mathcal{G}}}
+\]
+\script{Remember: packing numbers are essentially covering numbers for our purposes. Note that the bound on
+the RHS doesn't depend on $\nu$}
+
+\vsp
+Hence, we can leverage the ``agreement'' between the empirical $L_q$ norm and packing numbers to bound 
+the random quantity with the nonrandom VC dimension
+
+\vsp
+Unfortunately, 
+\begin{itemize}
+\item the gap between these bounds can be huge
+\item VC dimension can frequently only be upper-bounded itself
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+Alternatively, we can use  \alg{bracketing numbers}
+
+\vsp
+For a given function class $\F$, we can make a \alg{bracket}:
+\[
+[L,U] = \{f \in \F: L(x) \leq f(x) \leq U(x), \forall x\}
+\]
+and a \alg{bracketing} of $\F$ is a collection of brackets such that
+\[
+\F \subseteq \bigcup [L_j,U_j]
+\]
+
+We are most interested in $\epsilon-L_q(\P)$-bracketings: for all $j$
+\[
+\left(\int |U_j - L_j|^q d\P\right)^{1/q} \leq \epsilon
+\]
+This smallest $\epsilon-L_q(\P)$-bracketing is the \alg{bracketing number}
+\[
+N_{[\,]}(\epsilon, \F, \norm{\cdot}_{L_q(\P)})
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+Bracketing numbers are a bit larger that covering numbers
+\[
+N(\epsilon, \F, \norm{\cdot}_{L_q(\P)}) \leq N_{[\,]}(2\epsilon, \F, \norm{\cdot}_{L_q(\P)})
+\]
+But they provide stronger control over complexity.  To wit:
+
+\vsp
+\smallCapGreen{Fundamental GC theorem:}  If $N_{[\,]}(\epsilon, \F, \norm{\cdot}_{L_1(\P)}) < \infty$ for all $\epsilon > 0$.  Then
+$\F$ is GC
+
+\vsp
+\smallCapGreen{Proof idea:} For any $f \in \F$, $\exists j$
+\[
+(\hat\P - \P)f \leq (\hat\P - \P)U_j + (\P U_j - f) \leq (\hat\P - \P)U_j + \epsilon
+\]
+Hence
+\[
+\sup_{f \in \F} (\hat\P - \P)f  \leq \max_j (\hat\P - \P)U_j + \epsilon \leq 2\epsilon \parenthetical{\quad}{\textrm{a.s. for large enough $n$}}
+\]
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+We can get an exponential bound using bracket, just like for covering numbers/VC dimension:
+
+\[
+\P\left( \sup_{\ell \in \mathcal{L}_n}|(\hat\P - \P)\ell| > \epsilon\right) 
+\leq
+4N_{[\,]}(\epsilon, \F, \norm{\cdot}_{L_1(\P)})\exp\left\{ -\frac{96n\epsilon^2}{76Fb}\right\}
+\]
+where 
+\begin{itemize}
+\item $F = \sup_\ell \norm{\ell}_{L_1(\P)}$
+\item $b = \sup_{\ell} \norm{\ell}_{L_\infty(\P)}$
+\end{itemize}
+
+\vsp
+The main utility of this bound is that, in my experience, bracketing numbers are easier to bound/compute
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+\smallCapGreen{Important case: Lipschitz in a parameter} 
+
+\vsp
+Suppose the $\mathcal{L} = \{ \ell_\beta: \beta \in \mathcal{B}\}$. 
+\vsp
+
+For example, for regression:
+\[
+\ell_\beta(Z) = (Y - X^{\top}\beta)^2
+\]
+
+\vsp
+So, the squared error loss class is indexed by the regression coefficients
+
+\vsp
+Sometimes, the complexity of $\mathcal{L}$ can be translated to the complexity of $\mathcal{B}$
+
+\script{For constrained least squares, this is a huge win as the complexity of norm balls in Euclidean space is well known}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+\smallCapGreen{Important case: Lipschitz in a parameter} 
+Intuitively, a bracket on $\mathcal{B}$ can make a bracket on $\mathcal{L}$, provided $\ell_\beta - \ell_{\beta'}$
+can't change too much relative to $\beta - \beta'$.  
+
+\vsp
+Translated into mathematics, this is a Lipschitz-type constraint:  
+
+\vsp
+Let $(\mathcal{B},\norm{\cdot})$ be a normed subset of
+$\R^{p+1}$.  If there is a function $m$ where
+\[
+|\ell_{\beta}(z) - \ell_{\beta'}(z)| \leq m(z)\norm{\beta - \beta'}
+\]
+then
+\[
+N_{[\,]}(\epsilon, \F, \norm{\cdot}_{L_q(\P)}) \leq \left( \frac{4\sqrt{p+1} \; \textrm{diam}(\mathcal{B}) \norm{m}_{L_q(\P)}^q}{\epsilon} \right)^{p+1}
+\]
+\script{Often this approach won't work in ``high dimensions'' as the dimension exponential dominates the sample
+size exponential}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example: Uniform risk }
+To get a more careful bound, we need the \alg{contraction theorem}
+
+\script{See Ledoux and Talagrand (1991). Often we need to make more assumptions to bound the symmetrized process,
+as in the last example in this lecture}
+
+\vsp
+If the loss $\ell$ is Lipschitz, then for any function $f_* \in \F$ and nonrandom $z_i$
+\begin{align*}
+\lefteqn{\E\left( \sup_{f \in \F} \left| \sum_{i=1}^n \epsilon_i\left( \ell_f(z_i) - \ell_{f_*(z_i)} \right) \right| \right) }\\
+& \leq
+2\E\left( \sup_{f \in \F} \left| \sum_{i=1}^n \epsilon_i\left( f(z_i) -f_*(z_i) \right) \right| \right) 
+\end{align*}
+\script{See van der Geer (2008) for an interesting application of this technique}
+\end{frame}
+
+%
+%\begin{frame}[fragile]
+%\frametitle{Example: Improving Greenshtein}
+%Suppose we make a condition on $\ell_\beta(Z) = (Y - X^{\top}\beta)^2$ to make it Lipschitz. 
+%
+%\vsp
+% This usually involves some combination of assuming
+%\begin{itemize}
+%\item $Y$ has finite norm 
+%\item $X$  has finite norm
+%\item $\sup_{\ell \in \mathcal{L}} \norm{\ell}_{\infty} < L < \infty$
+%\end{itemize}
+%As
+%\[
+%\nabla_\beta \ell_\beta(Z) = -2YX + 2 XX^{\top}\beta = 2X(X^{\top}\beta - Y)
+%\]
+%and
+%\[
+%|\ell_\beta(Z) - \ell_{\beta'}(Z)| \leq \sup_{\beta \in \mathcal{B}}\norm{  \nabla_{\beta}\ell_\beta(Z)}_r \norm{\beta - \beta'}_s
+%\]
+%where $r$ and $s$ are H\"older constants
+%\end{frame}
+%\begin{frame}[fragile]
+%\frametitle{Example: Improving Greenshtein}
+%If we're looking at lasso, then we choose $s = \infty$ and $r = 1$
+%
+%\vsp
+%Fix a $t$, then $\textrm{diam}(\mathcal{B},\norm{\cdot}_1) = t$
+%\vsp
+%
+%Make norm assumptions to make the $\sup_\beta$ Lipschitz constant finite
+%
+%\vsp 
+%
+%Then
+%\[
+%\left( \frac{4\sqrt{p+1} \; \textrm{diam}(\mathcal{B}) \norm{m}_{L_q(\P)}^q}{\epsilon} \right)^{p+1} \lesssim
+%\left( \frac{C t\sqrt{p+1} }{\epsilon} \right)^{p+1}
+%\]
+%
+%\end{frame}
+\transitionSlide{Sub-Gaussian bounds}
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian}
+A \alg{sub-Gaussian} random variable is one that has tail decay at least as fast a Gaussian
+
+\vsp
+Note that $X\sim N(0,1)$ has $\P(|X| > x) \leq 2 \exp\{-x^2/2\}$ and in fact $\norm{X}_{\psi_2} = \sqrt{8/3}$
+
+\vsp
+Any R.V. that obeys this tail quantity is a sub-Gaussian R.V.
+
+\vsp
+A sub-Gaussian \alo{process} is a $\{X_t\}_{t\in T}$ where
+\[
+\P(|X_t - X_s| > x) \leq 2\exp\left\{ -\frac{x^2}{2d^2(s,t)}\right\}
+\]
+Note that a process is sub-Gaussian with respect to the pseudo-metric on the index set
+
+\script{This is crucial to remember}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian}
+\smallCapGreen{Reminder:} $\P(|X| > x) \leq C e^{-cx^p}$ iff $\norm{X}_{\psi_p} < \infty$.  Hence:
+\[
+\norm{X_s -X_t}_{\psi_2} \leq \sqrt{6} d(s,t)
+\]
+\script{Here, we can see our approach.  If our process isn't necessarily Lipschitz, but it is sub-Gaussian, then
+it is Lipschitz with respect to the $\psi_2$-Orlicz norm and $d$}
+
+\vsp
+\smallCapGreen{Example:} Any Gaussian process is sub-Gaussian with respect to the (standard deviation) 
+pseudo-metric $d(s,t) = \sigma(X_s - X_t)$ 
+
+\vsp
+\smallCapGreen{Example:} Let $\epsilon_1,\ldots,\epsilon_n$ be i.i.d uniform($\{-1,1\}$) and $a = (a_1,\ldots,a_n)^{\top} \in \R^n$.  Then
+\[
+X_a = \sum_{i=1}^n a_i \epsilon_i
+\]
+is a sub-Gaussian process w.r.t. $d(a,b) = \norm{a-b}_2$ known as the \alg{Rademacher process}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian}
+This last example follows from an important special case of Hoeffding's inequality
+\[
+\P(|X_a| > x) \leq 2 \exp\left\{ -\frac{x^2}{2\norm{a}_2^2}\right\}
+\]
+
+\vsp
+It turns out the innocuous looking Rademacher process is \alo{crucial}.  But first, let's state the
+main result
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian}
+Suppose we sub-Gaussian process $(X_t)_{t\in T}$ such that $\norm{X_s -X_t}_{\psi_2} \leq C d(s,t)$
+
+\vsp
+Also, let the diameter of $T$ be 
+\[
+D = \sup_{s,t \in T} d(s,t)
+\]
+Then\footnote{There are some other technical conditions, notably separability,
+to this result (the $\sup$ of a measurable process
+isn't necessarily measurable)} if $X_t$ is zero mean
+\[
+\E \sup_{t \in T} X_t \leq K\int_0^D \sqrt{\log(N(\epsilon,T,d))} d\epsilon
+\]
+\script{See Chapter 1.2 of Talagrand's Generic Chaining. For the symmetrizing statement for lower bounds, see
+Lemma 1.2.8}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian uniform bound}
+\[
+\E \sup_{t \in T} X_t \leq K\int_0^D \sqrt{\log(N(\epsilon,T,d))} d\epsilon
+\]
+
+\smallCapGreen{Note:} The $\sqrt{\log}$ part comes from the inverse of the $\psi_2$ function.  The $\int$ comes
+from `adding' together subsets of $T$ 
+
+\vsp
+\smallCapGreen{Some notes:}
+\begin{itemize}
+\item This is known as Dudley's inequality
+\item The upper bound can be improved with Talagrand's $\Gamma$ function, as demonstrated in his book Generic Chaining
+\item Often, Dudley's bound gives the appropriate rate, but with unnecessary log factors
+\end{itemize}
+
+\end{frame}
+%
+%\begin{frame}[fragile]
+%\frametitle{Sub-Gaussian}
+%Unfortunately, this result isn't immediately applicable due to many things (in particular the empirical process) not
+%being sub-Gaussian
+%
+%\vsp
+%We need a technique to pass to a sub-Gaussian process via \alg{symmetrization}
+%
+%\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian uniform bound}
+The most important process is the \alo{empirical process}:
+
+\[
+\norm{\hat\P - \P}_\F = \sup_{f \in \F} |\hat\P f - \P f|
+\]
+
+\vsp
+Unfortunately, the empirical process is not sub-Gaussian and we can't use the previous bound
+
+\vsp
+In fact, by Bernstein's inequality, the typical tail behavior is a mixture of sub-Gaussian and sub-exponential
+tails
+
+\vsp
+The main tool in this case is called \alg{symmetrization}
+
+\script{Theorem 1.2.7 in Generic Chaining provides the relevant upper bound for processes that are mixtures
+of $\psi_2$ and $\psi_1$ Orlicz norm bounds.  I've never seen anyone go this route in statistics, though}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian uniform bound}
+For Rademacher R.V.s $\epsilon_i$
+\[
+\E \norm{\hat\P - \P}_\F \leq \frac{2}{n} \E_Z\E_\epsilon \sup_{f\in \F} \left| \sum_{i=1}^n \epsilon_i f(Z_i) \right|
+\]
+
+\vsp
+This generates a random process that is conditionally sub-Gaussian (Hoeffding's inequality) on the observed data, indexed by the (random) coordinate evaluation $f(Z_i)$
+
+\vsp
+Sub-Gaussian \alo{must} always be stated with respect to a metric on the indexing set.  
+
+\vsp
+This turns out to be rather complicated in this case 
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian uniform bound}
+Let's return to the generalization error bound for the lasso
+
+\vsp
+Previously, we used \alo{Nemirovski's inequality} to bound the process
+
+\vsp
+It was conjectured in Greenshtein, Ritov (2004) that the induced $n^{1/4}$ rate could be increased to $n^{1/2}$
+
+\script{Additionally, they showed that under Gaussian design, they could in fact get the $1/2$ rate}
+
+\vsp
+Recently, this was answered in the affirmative by Bartlett et al. (2012), using the techniques we have discussed so far
+
+\script{In fact, they were able to make weaker assumptions as well}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Sub-Gaussian uniform bound}
+The approach is to
+\begin{enumerate}
+\item Symmetrize with Rademacher r.v.s
+\item Bound with Dudley's inequality $\E_\epsilon \sup_{f\in \F} \left| \sum_{i=1}^n \epsilon_i f(Z_i) \right|$
+\item Compute the $\sqrt{\log(N,\epsilon,T,d)}$, where $d$ is now the complicated norm from the symmetrization
+\item Integrate this bound up to the diameter of the indexing set
+\end{enumerate}
+
+\vsp
+If we do this, we can increase $t$ like
+\[
+t_n = o\left( \frac{\sqrt{n}}{\log^{3/2}(n) \log^{3/2}(n p)}\right)
+\]
+which, compared with Greenstein's result provides a faster rate
+\[
+t_n = o\left( \left(\frac{n}{\log( p)}\right)^{1/4}\right)
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bookkeeping}
+\begin{itemize}
+\item The best known concentration inequality of the Bernstein-type can be found in Bousquet (2001)
+\item The best possible bounds for the $\E \sup_{t \in T} X_t$ is given by Talagrand's $\Gamma$-function,
+though I've never seen this used
+\item symmetrization $+$ Dudley's bound is the more popular route
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Next time}
+\begin{figure}
+\centering
+\includegraphics[width=4in]{../figures/neuron.pdf}
+\end{figure}
+\end{frame}
+\end{document}

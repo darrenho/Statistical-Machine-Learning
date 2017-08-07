@@ -1,0 +1,1198 @@
+\documentclass[12pt]{beamer}
+%\usepackage[usenames,dvipsnames]{xcolor}
+
+\usepackage{_defsAndPackages675notation}
+\usepackage{_defsAndPackages675beamer}
+
+%\DeclareMathSizes{12}{12}{5}{12}
+\newcommand{\parenthetical}[2]{#1  \scriptstyle \alr{( #2)}}
+\begin{document}
+
+\title{\alg{Linear Methods for Regression: Theory}}
+\subtitle{\classTitle}
+%\author{\alg{Darren Homrighausen, PhD}}
+%\institute{\classTitle}
+\date{}
+
+
+
+\begin{frame}
+\maketitle
+%\titlepage
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=1in]{.../figures/CSU_logo2.eps}
+%\end{figure}
+%
+\organization
+%
+\end{frame}
+
+\transitionSlide{Ridge theory}
+
+\begin{frame}
+\frametitle{Set-up: assuming a linear model}
+Let $Y_i = X_i^{\top} \beta + \epsilon_i$, for $i=1,\ldots,n$,
+where
+\begin{itemize}
+\item $X_i \in \R^{p}$
+\item $\E\epsilon_i = 0$ and $\E \epsilon \epsilon^{\top} = I_n$ (w.l.o.g. $\sigma^2 = 1$)
+\item $\X$ is the design matrix, and rank($\X) = p$
+\end{itemize}
+
+\vsp
+We'll consider various properties that may be of interest:
+\begin{itemize}
+\item Estimating $\beta$
+\item Doing good predictions
+\end{itemize}
+%We'll consider two loss functions, with associated risk (that is, integrated loss)
+%\begin{align}
+%R_{func}(\hat\beta)
+%\end{align}
+\end{frame}
+
+\begin{frame}
+\frametitle{Estimating $\beta$ in low dimensions}
+To get $L^2$ consistency, we need to show that 
+
+\script{writing for this section $\hbetar{\lambda} \equiv \hat\beta_\lambda$}
+\[
+R(\hat\beta_{\lambda}) = \E_{\data} ||\hat\beta_{\lambda} - \beta||_2^2
+\]
+goes to zero.
+
+\vsp
+Again, we can decompose this as ($\E_{\data} \equiv \E$)
+\begin{align}
+R(\hat\beta) 
+& = 
+\E ||\hat\beta - \E\hat\beta||_2^2 + ||\E\hat\beta - \beta||_2^2  \\
+& =
+\tr \V \hat\beta + \sum_{j=1}^p(\E\hat\beta_j - \beta_j)^2
+\end{align}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Estimating $\beta$}
+Continuing from the previous slide 
+
+%\script{Remember, $\hat\beta_{\lambda} = V (D^2 + \lambda I)^{-1} D U^{\top} Y$}
+\script{Remember, $\hat\beta_{\lambda} = (\X^{\top}\X + \lambda I)^{-1}\X^{\top}Y$}
+\begin{align}
+R(\hat\beta) 
+& = 
+\tr \V \hat\beta_{\lambda} + ||\E\hat\beta_{\lambda} - \beta||_2^2 \\
+& = 
+\tr (\X^{\top}\X + \lambda I)^{-1}\X^{\top}\X(\X^{\top}\X + \lambda I)^{-1}+ \\
+& \qquad  +||((\X^{\top}\X + \lambda I)^{-1}\X^{\top}\X - I)\beta||_2^2 \\
+& = \textrm{variance} + \textrm{bias}^2
+%& = \tr D^2(D^2 + \lambda I)^{-2} +\\
+%& \qquad  +||((\X^{\top}\X + \lambda I)^{-1}\X^{\top}\X - I)\beta||_2^2 
+\end{align}
+
+Let's address each of these terms separately
+\end{frame}
+
+\begin{frame}
+\frametitle{Estimating $\beta$: Bias}
+For the bias, let's use the Woodbury matrix inversion lemma
+\[
+(A - BC^{-1}E)^{-1} = A^{-1} + A^{-1} B(C - EA^{-1}B)^{-1} E A^{-1}
+\]
+\script{See Henderson, Searle (1980), equation (12) for a statement and discussion}
+\begin{align}
+\textrm{bias}^2 
+& = ||((\underbrace{\X^{\top}\X}_{E} + \underbrace{\lambda I}_{C})^{-1}\X^{\top}\X \underbrace{- I}_{A^{-1}})\beta||_2^2 \\
+& = ||(I + (\X^{\top}\X)\lambda^{-1})^{-1}\beta||_2^2 \\
+& = \lambda^2||(\lambda I + \X^{\top}\X)^{-1}\beta||_2^2 \\
+& = \lambda^2||(\lambda I + V D^2 V^{\top})^{-1}\beta||_2^2 \\
+& =  \lambda^2||(V(\lambda V^{\top}V + D^2 )V^{\top})^{-1}\beta||_2^2 \\
+& = \lambda^2||(\lambda I + D^2 )^{-1}\theta||_2^2 \parenthetical{\qquad}{n>p, \; \theta=V^{\top}\beta}\\
+& = \lambda^2\sum_{j=1}^p \frac{\theta_j^2}{(\lambda  + d_j^2)^2}
+\end{align}
+\end{frame}
+
+\begin{frame}
+\frametitle{Estimating $\beta$: Variance}
+Likewise,
+\begin{align}
+\textrm{variance} 
+& = \tr \left( (\X^{\top}\X + \lambda I)^{-1}\X^{\top}\X(\X^{\top}\X + \lambda I)^{-1}\right) \\
+& = \tr \left( D^2(D^2 + \lambda I)^{-2} \right)\\
+& = \sum_{j=1}^p \frac{d_j^2}{(d_j^2 +\lambda)^2}
+\end{align}
+\vsp
+
+Putting them together: 
+\[
+R(\hat\beta) 
+ = 
+\sum_{j=1}^p \left(\frac{\lambda^2 \theta_j^2 + d_j^2}{(\lambda  + d_j^2)^2}\right)
+\]
+\alo{What now?}
+\end{frame}
+
+\begin{frame}
+\frametitle{Putting them together: Estimation risk}
+\begin{align}
+R(\hat\beta) 
+& = 
+\sum_{j=1}^p \left(\frac{\lambda^2 \theta_j^2 + d_j^2}{(\lambda  + d_j^2)^2}\right)\\ 
+\Rightarrow \frac{\partial \hat{R}(\hat\beta)}{\partial \lambda} 
+& = 
+\sum_{j=1}^n \frac{2d_j^2(\lambda \theta_j^2 - 1)}{(\lambda+d_j^2)^3}
+\end{align}
+\pause
+
+This suggests taking $\hat\lambda = 1/\theta_{\max}^2$.  Observe
+\[
+R(\hat\beta_{\hat\lambda})
+%=
+%\sum_{j=1}^p \left(\frac{ \theta_j^2/\theta_{\max}^4 + d_j^2}{(1/\theta_{\max}^2  + d_j^2)^2}\right)  
+\leq
+\sum_{j=1}^p \left(\frac{1/\theta_{\max}^2 + d_j^2}{(1/\theta_{\max}^2  + d_j^2)^2}\right)  
+=
+\sum_{j=1}^p \left(\frac{1}{\theta_{\max}^{-2}  + d_j^2}\right)  
+<
+\sum_{j=1}^p \left(\frac{1}{d_j^2}\right)  
+\]
+\script{As long as $\theta_{\max} < \infty$}
+\end{frame}
+
+\begin{frame}
+\frametitle{High dimensional prediction}
+Let's now suppose $p > n$ and write
+
+\[
+Y = \X \beta + \epsilon 
+\]
+\vsp
+
+We immediately run into a problem:
+\[
+Y = \X(\beta + b) + \epsilon
+\]
+for any $b$ in the null space of $\X$.
+
+\vsp
+This means that $\beta$ is \alg{non-identified} in high dimensions!
+
+\script{Identifiable $\Rightarrow \X\beta = \X\beta'$ means $\beta = \beta'$}
+\end{frame}
+
+\begin{frame}
+\frametitle{Identifiability}
+If we let $\rank(\X) = r$ (and hence $r < p$), then 
+\begin{itemize}
+\item $U \in \R^{n\times r}$
+\item $D \in \R^{r\times r}$ 
+\item $V \in \R^{p\times r}$
+\item  $V_{\perp} \in \R^{p \times (p - r)}$ be orthonormal and $V^{\top} V_{\perp} = 0$
+\end{itemize}
+%\script{Typically, $r = n$}
+
+\vsp
+Let $\theta = \X^{\top}(\X \X^{\top})^{\dagger} \X \beta = VV^{\top}\beta$
+
+\vsp
+Then $\theta \in \R^p$ and $Y = \X\theta + \epsilon$ and hence estimating $\theta$ is enough for
+predictions.
+
+\vsp
+Now, we form
+\[
+\hat\theta = (\X^{\top}\X + \lambda I)^{-1} \X^{\top} Y
+\]
+\end{frame}
+
+\begin{frame}
+\frametitle{Bias}
+\begin{align}
+\textrm{Bias}(\hat\theta) 
+& = 
+\E \hat\theta - \theta \\
+& =
+-(\lambda^{-1} \X^{\top}\X + I)^{-1} \theta  \parenthetical{\qquad}{\textrm{Woodbury}}\\
+& =
+-\Gamma(\lambda^{-1} \Gamma^{\top}\X^{\top}\X\Gamma + I)^{-1}\Gamma^{\top} VV^{\top} \theta 
+\parenthetical{\;\;\;}{\Gamma = [V, V_{\perp}]}\footnotemark\\
+& = 
+-[V, V_{\perp}] 
+\begin{bmatrix}
+(\lambda^{-1} D^2 + I_r)^{-1} & 0 \\
+0 & I_{p-r}
+\end{bmatrix}
+\begin{bmatrix}
+V^{\top} \\
+V_{\perp}^{\top}
+\end{bmatrix}
+VV^{\top} \theta \\
+& =
+-[V(\lambda^{-1} D^2 + I_r)^{-1}, V_{\perp}] 
+\begin{bmatrix}
+V^{\top} \theta \\
+0
+\end{bmatrix} \\
+& =
+-V(\lambda^{-1} D^2 + I_r)^{-1}V^{\top} \theta
+\end{align}
+\script{This derivation is a more general version of the previous, where $V$ was assumed to 
+be invertible}
+\footnotetext{$\Gamma$ is such that $\Gamma\Gamma^{\top} = \Gamma^{\top}\Gamma = I$}
+\end{frame}
+
+\begin{frame}
+\frametitle{Variance}
+We can make a somewhat simple bound on the variance:
+
+\begin{align}
+\V \hat \theta 
+& = 
+(\X^{\top}\X + \lambda I)^{-1}\X^{\top}\X (\X^{\top}\X + \lambda I)^{-1} \\
+& \leq 
+(\X^{\top}\X + \lambda I)^{-1} \\
+%& \leq 
+%\lambda^{-1} I
+\end{align}
+\script{ $A\leq B$ means $B-A$ is nonnegative definite}
+\end{frame}
+
+\begin{frame}
+\frametitle{Prediction risk}
+\begin{theorem}
+There exists a constant $C$ such that for $n$ large enough
+\[
+n^{-1} \E ||\X(\hat\theta - \theta)||_2^2 \leq C \bigg( \frac{r}{ n} + \lambda^2 n^{-(1+\eta - 2\tau)} \bigg)
+\]
+where $d_{\min}^{-2} \leq n^{-\eta}$ and $||\theta||_2 \leq n^{\tau}$
+\end{theorem}
+\vsp
+
+Note that 
+\[
+|| \beta ||_2^2 \geq ||VV^{\top}\beta||_2^2 = ||\theta||_2^2
+\]
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Prediction risk}
+\begin{proof}
+\[
+\E||\X(\hat\theta - \theta)||_2^2 = \tr(\X\V[\hat\theta] \X^{\top}) + ||\X\textrm{bias}(\hat\theta)||_2^2.
+\]
+Using the variance bound
+\[
+\X\V[\hat\theta] \X^{\top} \leq \X(\X^{\top}\X + \lambda I)^{-1}\X^{\top} \leq UU^{\top}
+\]
+We get
+\[
+\tr(\X\V[\hat\theta] \X^{\top}) \leq \tr(UU^{\top}) = r \parenthetical{\quad}{UU^{\top} \textrm{ is a rank $r$ projection}}
+\]
+\begin{align}
+||\X\textrm{bias}(\hat\theta)||_2^2 
+& = 
+||UD (\lambda^{-1} D^2 + I_r)^{-1}V^{\top} \theta||_2^2 \\
+& \leq 
+||D (\lambda^{-1} D^2 + I_r)^{-1}||_2^2||\theta||_2^2\\
+& \leq 
+(\max_j \frac{\lambda^2}{d_j^2})^2 ||\theta||_2^2  = \lambda^2d_{\min}^{-2}||\theta||_2^2
+\end{align}
+\end{proof}
+\end{frame}
+
+\begin{frame}
+\frametitle{Prediction risk}
+\begin{theorem}
+There exists a constant $C$ such that for $n$ large enough
+\[
+n^{-1} \E ||\X(\hat\theta - \theta)||_2^2 \leq C \bigg( \frac{r}{ n} + \lambda^2 n^{-(1+\eta - 2\tau)} \bigg)
+\]
+where $d_{\min}^{-2} \leq n^{-\eta}$ and $||\theta||_2 \leq n^{\tau}$
+\end{theorem}
+
+\vsp
+So,
+\[
+n^{-1} \E ||\X(\hat\theta - \theta)||_2^2  \leq \frac{r}{n}+ \frac{ \lambda^2d_{\min}^{-2}||\theta||_2^2}{n}
+\]
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Better result?}
+\emphasis{7cm}{\smallCapGreen{Challenge:}}{Can you tighten this bound?  Is this as good as possible?}  
+
+\script{As a reference, this material is in Shao, Deng (2012).  They introduce a thresholded ridge to get a faster
+rate.}
+\end{frame}
+
+\transitionSlide{Normal means}
+
+\begin{frame}
+\frametitle{A simpler model}
+Suppose that $Y \sim (\mu,1)$ and let 
+\[
+L_q(\mu) = 2^{q-2}(Y-\mu)^2 + \lambda |\mu|^q
+\]
+and
+\[
+\hat{\mu}_q = \argmin_{\mu} L_q(\mu)
+\]
+
+Then,
+
+\begin{itemize}
+\item \alg{$q = 0$} $\Rightarrow \hat{\mu}_0  = Y$  
+\item \alg{$q = 2$} $\Rightarrow \hat{\mu}_2  = Y/(\lambda + 1)$  
+\item \alg{$q= 1$}?
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Subdifferential}
+To theoretically solve this optimization problem, we use the notion of a \alg{subderivative}.
+
+\vsp
+We call $c$ a subderivative of $f$ at $x_0$ provided
+\[
+f(x) - f(x_0) \geq  c(x - x_0)
+\]
+
+A convex function can be optimized by setting the subderivative $= 0$
+
+\vsp
+The \alg{subdifferential} $\partial f|_{x_0}$ is the set of subderivatives. 
+\vsp
+
+$x_0$ minimizes $f$ if and only if $0 \in \partial f|_{x_0}$.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Subdifferential in action}
+For $\rho(\mu) = |\mu|$,
+\[
+\partial \rho|_{\mu}
+=
+\begin{cases}
+\{ -1\} & \textrm{ if } \mu < 0 \\
+[-1,1] & \textrm{ if } \mu = 0 \\
+\{ 1\} & \textrm{ if } \mu > 0 
+\end{cases}
+\]
+Therefore
+\[
+\partial L_1|_{\mu}
+=
+\begin{cases}
+\{ \mu - Y - \lambda\} & \textrm{ if } \mu < 0 \\
+\{\mu - Y + \lambda z : -1 \leq z \leq 1 \} & \textrm{ if } \mu = 0 \\
+\{ \mu - Y + \lambda\} & \textrm{ if } \mu > 0 \\
+\end{cases}
+\]
+
+\end{frame}
+
+\begin{frame}
+\frametitle{$\ell_1$ and soft-thresholding}
+
+$\hat\mu_1$ minimizes $L_1$ if and only if $0 \in \partial L_1$.
+\vsp
+
+So..
+\[
+\hat{\mu}_1 
+=
+\begin{cases}
+Y + \lambda & \textrm{ if } Y < -\lambda \\
+0 & \textrm{ if } -\lambda \leq Y \leq \lambda \\
+Y - \lambda & \textrm{ if } Y > \lambda 
+\end{cases}
+\]
+
+This can be written
+\[
+\hat{\mu}_1 = \textrm{sgn}(Y)(|Y| - \lambda)_+
+\]
+
+This is known as \alg{soft thresholding}
+\end{frame}
+
+\begin{frame}
+\frametitle{Orthogonal design: Example}
+Suppose now that ($p \leq n$)
+\[
+Y = \X\beta + \epsilon,
+\]
+where $\X^{\top} \X/n = I$.   
+
+\vsp
+Let's solve 
+\[
+\hat\beta_{\lambda} = \argmin_{\beta} \frac{1}{2n}|| \X \beta - Y||_2^2 + \lambda ||\beta||_1
+\]
+%Note that $\hat\beta_{LS} = \X^{\top}Y/n$ and
+\[
+\frac{1}{2n}|| \X \beta - Y||_2^2 
+\propto 
+\frac{\beta^{\top}\X^{\top}\X\beta}{2n} - \frac{\beta^{\top}\X^{\top}Y}{n} 
+=
+\frac{\beta^{\top}\beta}{2} - \beta^{\top}\hat\beta_{LS}
+\]
+Now,
+\[
+\frac{1}{2n}|| \X \beta - Y||_2^2 + \lambda ||\beta||_1 
+= 
+\sum_{j=1}^p \left( \beta_j^2/2 - \beta_j \hat{\beta}_{LS,j} +\lambda |\beta_j|\right)
+\]
+\end{frame}
+
+\begin{frame}
+\frametitle{Orthogonal design}
+We can minimize this component wise: 
+\[
+L(\beta) =  \beta^2/2 - \beta \hat{\beta}_{LS} +\lambda |\beta| \parenthetical{\qquad}{\textrm{dropping the } j}
+\]
+\vsp
+
+This can be optimized using \alo{subdifferentials} \smallCapGreen{[Exercise]}
+
+This results in \alo{soft-thresholding} the least squares solution.  
+
+\vsp
+This rationale can be extended to make the lasso \alo{gradient (coordinate) descent} explicit
+\end{frame}
+
+\begin{frame}
+\frametitle{From orthogonal to non-orthogonal design}
+\smallCapGreen{Notation:}
+We will refer to the covariates via $x_j$, observations via $X_i$, and the $j^{th}$ covariate of the
+$i^{th}$ observation as $X_{ij}$.
+
+\vvsp
+An iterative algorithm for finding $\hat\beta \equiv \hat\beta_{\lambda}$ is:
+
+\vsp
+Set $\hat \beta = (0,\ldots,0)^{\top}$.  Then for
+$j = 1,\ldots,p$:
+\begin{enumerate}
+\item Define $R_i = \sum_{k \neq j} \hat \beta_{k} X_{ik}$
+\item Form $\hat \beta_j$ by simple least squares of $(R_i)_{i=1}^n$ on $x_j$
+\item Soft-threshold these coefficients: $\hat\beta_j = \textrm{sgn}(\hat{\beta}_j)(|\hat{\beta}_j| - \lambda/||x_j||_2^2)_{+}$
+\end{enumerate}
+\script{This insight can be extended to sparse additive models as well, which we'll return to later.  \alr{Question:}
+Who knows what non-parametric regression is?}
+\end{frame}
+
+\begin{frame}
+\frametitle{Normal means}
+Note that the orthogonal design linear model is an example of a \alg{normal means} problem:
+
+\vsp
+Let $\epsilon \sim N(0,I)$, then
+\[
+Y = \X\beta + \epsilon \Leftrightarrow W \stackrel{D}{=} \beta + \frac{1}{\sqrt{n}} \epsilon
+\]
+
+This turns out to be an even more powerful idea..
+\end{frame}
+
+\begin{frame}
+\frametitle{Normal means}
+Let
+\begin{itemize}
+\item $\mathcal{H}$ be a real, separable Hilbert space with inner product $\langle \cdot, \cdot \rangle$
+\item $(\phi_i)$ be an orthonormal basis for $\mathcal{H}$
+\end{itemize}
+Then we can imagine a signal $h$ being observed with a white noise Gaussian \alo{process} 
+\[
+Y(t) = h(t) + \epsilon(t)
+\]
+\script{Technically, this doesn't exist.  Rather we can observe functionals $Y(t) dt = h(t) dt + d \epsilon(t)$}
+\vsp
+
+We make observations of this signal via inner products:
+\[
+y_i = \langle Y , \phi_i\rangle = \langle h + \epsilon , \phi_i\rangle = h_i+ \epsilon_i
+\]
+
+\vsp
+As linear operations of Gaussians are Gaussians, $\epsilon_i \sim N(0,1)$ 
+\end{frame}
+
+\begin{frame}
+\frametitle{Assumptions in high dimension}
+Most theoretical
+papers on high-dimensional regression have several components:
+\begin{itemize}
+
+\item The linear model is correct.
+\item The variance is constant.
+\item The errors have a Normal distribution (or related distribution)
+\item The parameter vector is sparse.
+\item The design matrix has very weak collinearity. 
+
+\script{E.g.  incoherence, eigenvalue restrictions, or incompatibility assumptions. We'll return to this later}
+\vsp
+
+To the best of my knowledge, these assumptions are not testable when $p>n$
+
+\vsp
+In fact, high collinearity is the rule, rather than exception
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Low assumption prediction: the lasso}
+\alo{Remember:}  Prediction risk
+  \[
+  R(\beta) 
+  = 
+  \mathbb{E}_Z \left[\left(Y - X^\top \beta\right)^2 \right]
+  =
+  \mathbb{E}_Z \left[\left(Y - X^\top \beta\right)^2 | \mathcal{D}\right]
+  \]
+
+  \vsp
+  Define the oracle estimator
+  \[
+  \beta_t^* = \argmin_{\{\beta:||\beta||_1 \leq t\}} R(\beta)
+  \]
+\script{\alr{Important:} This does not assume that $\E Y|X$ is linear in $X$!}
+
+  \vsp
+  The \alg{excess risk} is
+  \[
+  \mathcal{E}(\hat\beta_t,\beta_t^*) = R(\hat\beta_t) - R(\beta_t^*)
+  \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Persistence}
+ 
+  A procedure is \alg{persistent} for a set of measures $\mathcal{P}$ if 
+  \[
+\forall \P \in \mathcal{P}, \qquad  \mathcal{E}(\hat\beta_t,\beta_t^*) \stackrel{p}{\rightarrow} 0
+  \]
+\script{This is convergence in probability.  What is \alo{random}?}
+  \vsp
+%  \script{Greenshtein, Ritov (2004)} 
+
+Define the following set of distributions on $\R \times \R^p$: Let $C_\mathcal{P} < \infty$ and 
+\[
+\mathcal{P} = \{ \P: \P Y^2 < C_\mathcal{P}\textrm{, and } |x_j| < C_\mathcal{P} \textrm{ almost surely, } j = 1,\ldots,p\}
+\]
+
+\vsp
+We'd like to know how fast $t$ can grow while still maintaining persistency. 
+
+\script{Note: this set $\mathcal{P}$ is more restrictive than needed}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Useful results and observations}
+Let 
+\begin{itemize}
+\item $Z = (x_0, x_1, \ldots, x_p)^{\top}$, where $x_0 = Y$
+\item $\gamma = (-1,\beta_1,\ldots,\beta_p)^{\top}$
+\end{itemize}
+Then, for $\ell_\beta(Z) = (Y - X^{\top}\beta)^2$,
+\[
+\P \ell_{\beta} = \P(Y - X^{\top}\beta)^2 = \gamma^{\top} \Sigma \gamma,
+\]
+where $\Sigma_{jk} = \P Z_j Z_k$ for $0 \leq j,k \leq p$
+
+\vsp
+Likewise, 
+\[
+\hat{\P}\ell_{\beta} = \gamma^{\top} \hat\Sigma \gamma,
+\]
+where $\hat\Sigma_{jk} = n^{-1} \sum_{i = 1}^n Z_{ij}Z_{ik}$ for $0 \leq j,k \leq p$
+
+\script{These can be written: $\Sigma = \P ZZ^{\top}$ and $\hat\Sigma = \hat\P ZZ^{\top}$}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Persistence theorem}
+\begin{theorem}
+Over any $\P$ in $\mathcal{P}$, the procedure
+\[
+\argmin_{\beta \in \{\beta: ||\beta||_1 \leq t\}} \hat{\P} \ell_\beta
+\]
+is persistent provided $\log p = o(n)$ and 
+\[
+t = t_n =  o\left( \left(\frac{n}{\log p} \right)^{1/4} \right)
+\]
+\end{theorem}
+\script{This theorem appears in Greenshtein, Ritov (2004)}
+
+\script{It's worth noting that this rate is improved to a 
+square root in Bartlett, et al. (2012).  This is at the expense of higher order powers of the log terms.
+These logarithmic powers could be removed by bounding 
+Talagrand's $\gamma_2$ functional directly, instead of an entropy integral}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Deterministic asymptotic notation}
+We write $a_n = O(b_n)$ (and say \alg{big ohh}) provided
+\[
+\frac{a_n}{b_n} = O(1),
+\]
+where 
+\[
+c_n = O(1) 
+\]
+means 
+\begin{itemize}
+\item There exists a $C$
+\item Such that for sufficiently large $N$
+\item For all $n \geq N$
+\item $c_n \leq C$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Deterministic asymptotic notation}
+We write $a_n = o(b_n)$ (and say \alg{little ohh}) provided
+\[
+\frac{a_n}{b_n} = o(1),
+\]
+where 
+\[
+c_n = o(1) 
+\]
+means 
+\begin{itemize}
+\item For all $\epsilon>0$
+\item There exists an $N$
+\item Such that for all $n \geq N$
+\item $c_n \leq \epsilon$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Stochastic asymptotic notation}
+We write $a_n = O_p(b_n)$ (and say \alg{big ohh p}) provided
+\[
+\frac{a_n}{b_n} = O_p(1),
+\]
+where 
+\[
+c_n = O_p(1) 
+\]
+means 
+\begin{itemize}
+\item For all $\delta$
+\item There exists a C
+\item Such that for sufficiently large $N$
+\item For all $n \geq N$
+\item $\P(|c_n|  \geq C)\leq \delta$
+\end{itemize}
+\script{This is also called \alg{bounded in probability}, and is related to convergence in distribution}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Stochastic asymptotic notation}
+We write $a_n = o_p(b_n)$ (and say \alg{little ohh p}) provided
+\[
+\frac{a_n}{b_n} = o_p(1),
+\]
+where 
+\[
+c_n = o_p(1) 
+\]
+means 
+\begin{itemize}
+\item For all $\epsilon>0,\delta > 0$
+\item There exists an $N$
+\item Such that for all $n \geq N$
+\item $\P(|c_n| \geq \epsilon) \leq \delta$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Stochastic asymptotic notation}
+Note that if we have random variables $(X_n)$ and $X$, then
+\[
+X_n \rightarrow X \textrm{ in probability} \Leftrightarrow X_n - X = o_p(1)
+\]
+We can also express Slutsky's theorem\Note
+\begin{itemize}
+\item $o_p(1) + O_p(1) = ?$
+\item $o_p(1) O_p(1) = ?$
+\item $o_p(1) + o_p(1)O_p(1) = ?$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Persistence proof}
+  Note that, $\sup_{\beta \in \{b: \norm{b}_1 \leq t\}} ||\beta||_1 \leq t$.   Also, 
+  \vsp
+  
+  \begin{lemma}
+  \label{lem:quad-form} 
+  Suppose $a \in \mathbb{R}^p$ and $A \in
+  \mathbb{R}^{p \times p}$.  Then
+  \begin{equation*} 
+    a^\top A a 
+    \leq \norm{a}^2_{1}
+    \norm{A}_{\infty},
+  \end{equation*}
+  where $\norm{A}_\infty:=\max_{i,j} |A_{ij}|$ is the entry-wise max norm.
+\end{lemma}
+ \begin{proof} 
+   \begin{align*}
+     a^\top A a & \underbrace{\leq}_{\textrm{H{\"o}lder's\Note}} \norm{a}_{1} \norm {A a}_{\infty} 
+      \leq \norm{a}_{1} \max_{ij} |A_{ij}| \norm{a}_1  
+      = \norm{a}^2_{1} \norm{A}_{\infty},
+   \end{align*}
+ \end{proof}
+These facts imply..
+  \end{frame}
+  
+  \begin{frame}
+  \frametitle{Persistence proof}
+  \begin{align}
+  \mathcal{E}(\hat\beta_t,\beta_t^*) 
+  & = 
+  \underbrace{R(\hat\beta_t)}_{ \hat\gamma_t^{\top} \Sigma \hat\gamma_t } - 
+  \underbrace{R(\beta_t^*)}_{ (\gamma_t^*)^{\top} \Sigma  (\gamma_t^*)} \\
+  & = 
+  \hat\gamma_t^{\top} \Sigma \hat\gamma_t - \hat\gamma_t^{\top} \hat\Sigma \hat\gamma_t 
+  +  \hat\gamma_t^{\top} \hat\Sigma \hat\gamma_t -  (\gamma_t^*)^{\top} \Sigma  (\gamma_t^*) \\
+  & \leq
+  \hat\gamma_t^{\top} \Sigma \hat\gamma_t - \hat\gamma_t^{\top} \hat\Sigma \hat\gamma_t 
+  +   (\gamma_t^*)^{\top} \hat\Sigma  \gamma_t^* -  (\gamma_t^*)^{\top} \Sigma  \gamma_t^*\\  
+  & =
+  \hat\gamma_t^{\top} (\Sigma - \hat\Sigma) \hat\gamma_t 
+  +  (\gamma_t^*)^{\top}( \hat\Sigma  - \Sigma) (\gamma_t^*) \\
+  & \leq
+  2\sup_{\beta \in \{b : ||b||_1 \leq t\}} \gamma_t^{\top} (\Sigma - \hat\Sigma) \gamma_t  \parenthetical{\quad}{2\epsilon \textrm{ trick}}\\
+  & \leq   
+  2\sup_{\beta \in \{b : ||b||_1 \leq t\}} \norm{\gamma_t}_1^2 \norm{\Sigma - \hat\Sigma}_{\infty} 
+  \parenthetical{\quad}{Lemma} \\
+  & \leq   
+  2(t+1)^2 \norm{\Sigma - \hat\Sigma}_{\infty}   
+    \end{align}
+Can we control the $\sup$-norm part?
+\end{frame}
+
+
+  \begin{frame}
+  \frametitle{Persistence proof}
+\smallCapGreen{Nemirovski's inequality:}  Let $\xi_i  \in \R^p$, $i=1,\ldots,n$ be independent, zero mean, finite variance
+random variables with $p \geq 3$.  Define $S_n = \sum_{i=1}^n \xi_i$. 
+Then for every $q \in [2,\infty]$
+\[
+\E ||S_n ||_q^2 \leq e(2\log(p)-1) \min\{q, \log(p)\} \sum_{i=1}^n \E ||\xi_i||_q^2
+\]
+
+\script{Juditsky, Nemirovski (2000), D\"umbgen, et al. (2010)}
+\vsp
+
+This should be compared with the na\"ive bound:
+\[
+\E ||S_n ||_q^2 \leq \sum_{i=1}^n\sum_{i'=1}^n \E ||\xi_i||_q||\xi_{i'}||_q
+\]
+\end{frame}
+  \begin{frame}
+  \frametitle{Persistence proof: Nemirovski's inequality}
+
+\alo{Motivation:} Under Nemirovski's assumptions, 
+\begin{itemize}
+\item $\E S_n^2 = \sum_{i=1}^n \E\xi_i^2 \parenthetical{\quad}{p=1}$
+\item In a Hilbert space with inner product $\langle \cdot, \cdot \rangle$
+\[
+\E ||S_n||^2 = \sum_{i,i'}^n \E \langle \xi_i, \xi_{i'} \rangle = \sum_{i=1}^n \E ||\xi_i||^2
+\]
+\item What about a Banach space (e.g. $||\cdot||_q, q \neq 2$)?
+\end{itemize}
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Persistence proof}
+\smallCapGreen{Nemirovski's inequality:}  Let $\xi_i  \in \R^p$, $i=1,\ldots,n$ be independent, zero mean, finite variance
+random variables with $p \geq 3$.  Define $S_n = \sum_{i=1}^n \xi_i$. 
+Then for every $q \in [2,\infty]$
+\[
+\E ||S_n ||_q^2 \leq e(2\log(p)-1) \min\{q, \log(p)\} \sum_{i=1}^n \E ||\xi_i||_q^2
+\]
+
+\vsp
+Let $\xi_i = \textrm{vec}\left(\frac{1}{n} \left(Z_{ij}Z_{ik} - \E Z_{j}Z_{k}\right) \right) \in \R^{(p+1)^2}$ be the vectorized
+difference of \alo{empirical covariance} and the \alo{true covariance}
+
+\vsp
+Then
+\[
+\norm{\Sigma - \hat\Sigma}_{\infty}   = \norm{ \sum_{i=1}^n \xi_i}_\infty
+\]
+\end{frame}
+
+
+  \begin{frame}
+  \frametitle{Persistence proof}
+
+\[
+\E ||S_n ||_q^2 \leq e(2\log(p)-1) \min\{q, \log(p)\} \sum_{i=1}^n \E ||\xi_i||_q^2
+\]
+\script{\smallCapGreen{Nemirovski's inequality}}
+
+\begin{align*}
+\left(\E\norm{\Sigma - \hat\Sigma}_{\infty} \right)^2
+& \leq
+\E\norm{\Sigma - \hat\Sigma}_{\infty}^2  \parenthetical{\qquad}{\textrm{Jensen's inequality\Note}}\\
+ & = 
+\E \norm{ \sum_{i=1}^n \xi_i}_\infty^2 \\
+ & \leq C \log( (p+1)^2)
+\sum_{i=1}^n \E || \xi_i||_\infty^2 \\
+ & \leq 4CC_{\mathcal{P}}^2 \log( p+1 ) \frac{1}{n} \parenthetical{\quad}{\P \in \mathcal{P}}\\
+ & \lesssim \frac{\log(p)}{n}
+\end{align*}
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Persistence proof: Conclusion}
+  \begin{align}
+\P\left(   \mathcal{E}(\hat\beta_t,\beta_t^*)  > \delta\right)
+  & \leq
+  \E[\mathcal{E}(\hat\beta_t,\beta_t^*) ] \delta^{-1} \parenthetical{\quad}{\textrm{Markov's inequality}}\\
+& \leq   
+  2\delta^{-1}(t+1)^2 \E \norm{\Sigma - \hat\Sigma}_{\infty}   \\
+  & \lesssim
+  2\delta^{-1}(t+1)^2 \sqrt{\frac{\log p}{n}}
+    \end{align}
+Therefore, we have \alo{persistence} provided $\log p = o(n)$ and
+\[
+t_n = o\left( \left(\frac{n}{\log p} \right)^{1/4} \right)
+\]
+Alternatively
+\[
+\mathcal{E}(\hat\beta_t,\beta_t^*) = O_p\left( t^2\sqrt{\frac{\log(p)}{n}}\right)
+\]
+
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Probably approximately correct (PAC)}
+Probability bound $\Leftrightarrow$ \alo{high probability} upper bound:
+\[
+\P(\textrm{error} > \delta) \leq \epsilon
+\]
+gets converted to: with probability $1-\epsilon$
+\[
+\textrm{error} \leq \delta
+\]
+\script{This is known as a PAC bound}
+
+\vsp
+\smallCapGreen{Example:} 
+\[
+\P(|\overline{X} - \mu| > \delta ) \leq \frac{\E(\overline{X} - \mu)^2}{\delta^2}
+\]
+Hence, with probability at least $1 - \frac{\sigma^2}{n\delta^2}$
+\[
+|\overline{X} - \mu| \leq \delta
+\]
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Low assumption lasso: Summary}
+It is important to note that we do \alo{not} assume...
+\begin{itemize}
+\item a linear model
+\item an additive stochastic component (let alone, Gaussian errors)
+\item that the design is `almost' uncorrelated
+\end{itemize}
+and we get that, with probability at least $1-C\delta^{-1}t^2\sqrt{\frac{\log(p)}{n}}$,
+\[
+R(\hat\beta_t) \leq R(\beta_t^*) + \delta
+\]
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Not low assumption lasso}
+  Compare this to a classic result about the lasso that says more, but under \alo{much} stronger assumptions
+
+\vsp
+Assume that $Y = \X\beta^* + \epsilon$
+
+\vsp
+Then we have the \alg{basic inequality}\Note for the lasso ($\hat\beta \equiv \hat\beta_{\lambda}$)
+\[
+\norm{\X(\hat\beta - \beta^*)}_2^2/n + \lambda \norm{\hat\beta}_1 
+\leq 
+\alr{2\epsilon^{\top}\X(\hat\beta - \beta^*)/n} + \alb{\lambda \norm{\beta^*}_1}
+\]
+
+\begin{itemize}
+\item The $\alr{2\epsilon^{\top}\X(\hat\beta - \beta^*)/n}$ term is the \alr{empirical process}
+\item The $\alb{\lambda \norm{\beta^*}_1}$ is the \alb{deterministic part}
+\end{itemize}
+\vsp
+
+\smallCapGreen{Goal:} choose $\lambda$ so that \alb{deterministic} $>>$ \alr{empirical process}
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Not low assumption lasso}
+Observe that the empirical process can be bounded
+\[
+\alr{2\epsilon^{\top}\X(\hat\beta - \beta^*)/n}  
+\leq 
+\left(\max_{1 \leq j \leq p} 2|\epsilon^{\top} x_j|/n\right) \norm{\hat\beta - \beta^*}_1
+\]
+Set
+\[
+\mathcal{T} = \left\{ \max_{1 \leq j \leq p} 2|\epsilon^{\top} x_j|/n \leq \lambda_0\right\}
+\]
+
+Assume $\X$ is standardized: 
+$\hat\Sigma = \X^{\top}\X/n$ has 1's on diagonal.  
+
+\begin{theorem}
+If $\lambda_0 = 2\sigma\sqrt{(t^2 + 2\log p)/n}$, and $\epsilon \sim N(0,\sigma^2 I)$, then
+\[
+\P(\mathcal{T}) \geq 1 - 2 e^{-t^2/2}
+\]
+Hence, $\mathcal{T}$ is `large'
+\end{theorem}
+Proof: [\smallCapGreen{Exercise}]
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Not low assumption lasso}
+Let 
+\[
+\beta_{j,S} = 
+\begin{cases}
+\beta_j & \textrm{ if } j \in S \\
+0 & \textrm{ if } j \notin S \\
+\end{cases}
+\]
+\script{Hence, $\beta = \beta_{S} + \beta_{S^c}$}
+
+\begin{theorem}
+On $\mathcal{T}$, with $\lambda \geq 2\lambda_0$ and $S^* = \{ j : \beta_j^* \neq 0\}$
+\[
+2\norm{\X(\hat\beta - \beta^*)}_2^2/n + \lambda \norm{\hat{\beta}_{S_*^c}}_1
+\leq
+3\lambda \norm{\hat{\beta}_{S_*} - \beta_{S_*}^*}_1
+\]
+\end{theorem}
+Proof sketch: Use the basic inequality along with the triangle inequality
+\[
+\norm{\hat\beta}_1 \geq \norm{\beta_{S_*}}_1 - \norm{\hat{\beta}_{S_*} - \beta_{S_*}}_1 + \norm{\hat{\beta}_{S_*^c}}_1
+\]
+[\smallCapGreen{Exercise}]
+\end{frame}
+
+
+  \begin{frame}
+  \frametitle{Not low assumption lasso}
+Here is where \alo{structural} assumptions come in
+
+\vsp
+We need to get the \alr{term} and the \alb{term} `together'
+\[
+\alr{2\norm{\X(\hat\beta - \beta^*)}_2^2/n} + \lambda \norm{\hat{\beta}_{S_*^c}}_1
+\leq
+3\lambda\alb{ \norm{\hat{\beta}_{S_*} - \beta_{S_*}^*}_1}
+\]
+
+\vsp
+This occurs in two steps ($s_* = |S_*|$):
+\begin{enumerate}
+\item By Cauchy-Schwarz: $\norm{\hat{\beta}_{S_*} - \beta_{S_*}^*}_1 \leq \sqrt{s_*} \norm{\hat{\beta}_{S_*} - \beta_{S_*}^*}_2$
+\item Next convert $||b||_2$ into Mahalanobis distance $||\X b||_2$
+\end{enumerate}
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Not low assumption lasso}
+To accomplish step \alb{2.}, if $d_{\min} > 0$, then 
+\[
+\norm{\X(\hat\beta - \beta)}_2^2 \geq d_{\min}^2\norm{\hat\beta - \beta}_2^2
+\]
+and we can continue the chain of inequalities
+
+\vsp
+However...
+\vsp
+
+\alr{$ \qquad d_{\min} > 0 \Leftrightarrow \X$ is full rank!}
+
+\vsp
+ This  is too strong  as it gives a guarantee for \alo{all} $\beta$
+%\[
+%\norm{\X(\hat\beta - \beta)}_2^2/n = (\hat\beta - \beta)^{\top} \hat{\Sigma} (\hat\beta - \beta)
+%\]
+%
+%\[
+%\norm{\hat{\beta}_{S_*} - \beta_{S_*}^*}_2^2 \leq 
+%\]
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Not low assumption lasso}
+Observe that on $\mathcal{T}$:
+\[
+\norm{\hat{\beta}_{S_*^c}}_1
+\leq
+3\norm{\hat{\beta}_{S_*} - \beta_{S_*}^*}_1
+\]
+\script{This follows from previous theorem}
+
+\vsp
+We can restrict ourselves to only those $\beta$ that satisfy this constraint
+
+\vsp
+This gives us the \alg{compatibility condition} for a set $S$ and constant $\phi>0$:
+\[
+\forall \beta \textrm{ such that } \norm{\beta_{S^c}}_1 \leq 3\norm{\beta_{S}}_1
+\Rightarrow
+\norm{\beta_{S}}_1^2 \leq \left(\beta^{\top} \hat\Sigma \beta \right) |S|/\phi^2
+\]
+\script{$\norm{\beta_{S}}_1^2 
+\leq 
+|S|\norm{\beta_{S}}_2^2 
+=
+\left(\beta^{\top} \hat\Sigma \hat\Sigma ^{-1}\beta \right) |S|
+\leq 
+\left(\beta^{\top} \hat\Sigma\beta \right) \frac{n|S|}{d_{\min}^2}$ 
+provided $\hat\Sigma$ is invertible}
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Not low assumption lasso}
+Related notions are:
+\begin{itemize}
+\item \smallCapGreen{Restricted eigenvalue:} Check the compatibility inequality $ \norm{\beta_{S^c}}_1 \leq 3\norm{\beta_{S}}_1$ for \alo{all} sets $S$ of a given cardinality.
+\item  \smallCapGreen{Restricted isometry:} An \alg{isometry} $U$ doesn't deform angles: $|| Ux ||_2 = ||x||_2$.  
+A restricted isometry doesn't deform the angles too much over relevant parts of the space: that is, $\exists \delta >0$ such that for all interesting $\beta$
+\[
+(1-\delta)\norm{\beta}_2^2 \leq \norm{\X\beta}_2^2 \leq (1+\delta)\norm{\beta}_2^2
+\]
+
+\script{See Larry Wasserman's blog post for an interesting discussion on this topic: {\tiny \tt 
+http://normaldeviate.wordpress.com/2012/08/07/rip-rip-restricted-isometry-property-rest-in-peace}}
+\end{itemize}
+\vsp
+
+These are known as \alo{structural assumptions}
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Not low assumption lasso}
+Suppose that the compatibility condition holds for $S_*$ with constant $\phi_*$.  Then on $\mathcal{T}$ and
+for $\lambda \geq 2 \lambda_0$
+\[
+n^{-1}\norm{\X(\hat\beta - \beta_*)}_2^2 + \lambda \norm{\hat\beta - \beta_*}_1 \leq 4 \lambda^2 \frac{|S_*|}{\phi_*}
+\]
+[\smallCapGreen{Exercise}] Use the compatibility condition on the previous theorem and use the useful
+inequality $4ab \leq a^2 + 4b^2$
+\vsp
+
+This of course implies that:
+\begin{itemize}
+\item $\norm{\X(\hat\beta - \beta_*)}_2^2 \leq 4n\lambda^2|S_*| / \phi_*$
+\item $\norm{\hat\beta - \beta_*}_1 \leq 4 \lambda |S_*|/\phi_*$
+\end{itemize}
+\script{Write this as a PAC bound\Note}
+\end{frame}
+
+\transitionSlide{HARNESS}
+
+  \begin{frame}
+  \frametitle{Low assumption regression: HARNESS}
+  An old idea in statistics is to split the data for model validation purposes
+  
+  \vsp
+  A simple reimagining of this is called  `High-dimensional Agnostic Regresson Not Employing Structure or Sparsity'
+  
+  \script{R.J. Tibshirani, Wasserman (2014+), Wasserman, Roeder (2009)}
+  
+  \vsp
+  Split the data randomly into two halves: $\data_1,\data_2$
+  
+  \vsp
+Use $\data_1$ to select a subset of variables $\hat{\mathcal{S}}$ 
+and an estimator $\hat\beta = \hat\beta_{\hat{\mathcal{S}}}$
+
+\script{The method is agnostic about the variable selection. It could be forward stepwise, lasso, elastic net, ...}
+
+\vsp
+ Use $\data_2$ to do distribution free inference
+\end{frame}
+
+
+
+  \begin{frame}
+  \frametitle{Low assumption regression: HARNESS}
+We might want to know
+\begin{itemize}
+\item What is the predictive risk of $\hat\beta$?
+\item How much does each variable in $\hat{\mathcal{S}}$ contribute to the predictive risk?
+\item What is the best linear predictor using the variables in $\hat{\mathcal{S}}$?
+\end{itemize}
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Low assumption regression: HARNESS}
+Let 
+\begin{itemize}
+\item $R = \E[(Y - X^{\top}\hat\beta)^2|\data_1]$
+\item $R_j = \E[(Y - X^{\top}\hat\beta_{(j)})^2|\data_1] - R$
+
+\script{This is the \alo{predictive loss} of not including $j^{th}$ covariate}
+\end{itemize}
+\vsp
+
+We can estimate these quantities with $\data_2$
+\begin{itemize}
+\item $\hat{R} = \hat{\P}_{\data_2} \ell_{\hat\beta}$ with (approx.) $1-\alpha$ confidence interval
+\[
+\hat{R} \pm z_{\alpha/2} s / \sqrt{|\data_2|}
+\]
+where $s$ is sample standard deviation of $(\ell_{\hat\beta}(Z_i))_{i \in \data_2}$
+\item Likewise, $e_{ij} = (Y_i - X_i^{\top}\hat\beta_{(j)})^2 - \hat{R}$, $\hat{R}_j = \overline{e}_j$, and
+\[
+\hat{R}_j \pm z_{\alpha/2} s_j / \sqrt{|\data_2|}
+\]
+
+\end{itemize}
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Low assumption regression: HARNESS}
+These results can be conveniently plotted
+
+\script{Need to correct for multiple comparisons, e.g. Bonferroni}
+\vsp
+
+Estimates of 
+\[
+\beta_* = \argmin \E(Y - X_{\hat{\mathcal{S}}}^{\top}\beta)^2
+\]
+can be formed via standard least squares using $\data_2$.
+\end{frame}
+
+  \begin{frame}
+  \frametitle{Low assumption regression: HARNESS}
+\begin{table}
+\centering
+\begin{tabular}{p{5.5cm}p{5.5cm}}
+\includegraphics[width=2.1in]{../figures/larryWine1.pdf} &
+\includegraphics[width=2.1in]{../figures/larryWine2.pdf} \\
+Confidence intervals for $R_j$ for selected variables & 
+Confidence intervals for projected parameters for selected variables 
+\end{tabular}
+\end{table}
+\script{Wasserman discussion of Lockhard et al. (2014)}
+\end{frame}
+\end{document}

@@ -1,0 +1,1853 @@
+\documentclass[12pt]{beamer}
+%\usepackage[usenames,dvipsnames]{xcolor}
+
+\usepackage{_defsAndPackages675notation}
+\usepackage{_defsAndPackages675beamer}
+
+%\DeclareMathSizes{12}{12}{5}{12}
+\newcommand{\parenthetical}[2]{#1  \scriptstyle \alr{( #2)}}
+\date{}
+
+\begin{document}
+
+\title{\alg{Classification via Trees and Randomization}}
+\subtitle{\classTitle}
+
+\begin{frame}
+\maketitle
+%\titlepage
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=1in]{.../figures/CSU_logo2.eps}
+%\end{figure}
+%
+\organization
+%
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{An Introductory Example}
+Use macroeconomic data to predict recessions
+\vsp
+
+\vsp
+Use handful of national-level variables -- Federal Funds Rate, Term
+Spread, Industrial Production, Payroll Employment, S\&P500
+
+\vsp
+Also include state-level Payroll Employment
+
+\vsp
+In this example, we code $Y = 1$ as a recession and $Y = 0$ as growth.
+
+\vsp
+We will use data from 1960 through 1999  as \alo{training data} 
+\vsp
+
+We will use data from 2000 through 2011  as \alo{testing data} 
+
+\vsp
+\script{See Owyang, Piger, Wall (2012)}
+\end{frame}
+
+
+\begin{frame}
+\begin{center}
+  \alg{\huge Trees}
+        \end{center}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{What is a (decision) tree?}
+\begin{itemize}
+\item Trees involve \alo{stratifying} or \alo{segmenting} the predictor space into a number of simple regions.
+\item Trees are simple and useful for interpretation.  
+\item Basic trees are not great at prediction.
+\item More modern methods that use trees are much better.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example tree}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.2in,trim=0 0 0 30,clip]
+  {../figures/obamaTree.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{dendrogram view}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.3in,trim=0 50 0 50,clip]
+  {../figures/recessionTrees0a.pdf}
+\end{figure}
+\smallCapGreen{Terminology}
+\begin{itemize}
+\item We call each split or end point a \alg{node}.  Each terminal node is referred to as a \alg{leaf}.  
+\begin{itemize}
+\item[] This tree has 1 interior node and 3 terminal nodes. 
+\end{itemize}
+\item The interior nodes lead to \alg{branches}.  
+\begin{itemize}
+\item[] This graph has two main branches (the S\&P 500 split).
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Partitioning view}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.2in]%,trim=50 100 50 20,clip]
+  {../figures/recessionTrees0b.pdf}
+\end{figure}
+\smallCapGreen{Notes}
+\begin{itemize}
+\item We predict all observations in a region the same prediction
+\item The three regions R1, R2, and R3 are the \alo{terminal nodes} 
+\end{itemize}
+
+%The predictions are the means of each rectangles.  
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Tree}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2in,trim=50 0 0 0,clip]
+  {../figures/recessionTrees0a.pdf}
+  \includegraphics[width=2.2in,trim=0 0 0 50,clip]
+  {../figures/recessionTrees0b.pdf}
+\end{figure}
+We can interpret this as {\scriptsize(though this is with some reservation)}
+\begin{itemize}
+\item S\&P 500 is the most important variable.
+\item If S\&P 500 is large enough, then we predict no recession.
+\item If S\&P 500 is small enough, then we need to know the change
+  in the employment level of Maine.
+\end{itemize}
+\end{frame}
+
+
+%\begin{frame}[fragile]
+%\frametitle{When do trees do well?}
+%\begin{figure}
+%\centering
+%\includegraphics[width=2.1in]{../figures/classTreeRegressionVsTree}
+%\end{figure}
+%Top Row: A two-dimensional classification example in which the true decision boundary is linear. 
+%A linear boundary will outperform a decision tree that performs splits parallel to the axes.
+%
+%Bottom Row: Here the true decision boundary is non-linear. A linear model is unable to capture the true decision boundary, whereas a decision tree is successful.
+%\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{How do we build a tree?}
+
+\begin{enumerate}
+\item Divide the predictor space into
+$M$ non-overlapping regions $R_1, \ldots, R_M$ 
+
+\script{this is done via greedy, recursive, binary splitting}
+\item Every observation that falls into a given region $R_m$ is given the same prediction
+\begin{itemize}
+\item \smallCapGreen{Regression:} The average of the responses for a region
+\item \smallCapGreen{Classification:} Determined by majority (or plurality) vote in that region
+\end{itemize}
+\end{enumerate}
+\vsp
+
+Important:
+\begin{itemize}
+\item[-] Trees can only make rectangular regions that are \alo{aligned} with the coordinate axis.
+\item[-] The fit is \alo{greedy}, which means that after a split is made, all further decisions are conditional
+on that split.
+\end{itemize}
+\end{frame}
+
+\transitionSlide{Regression trees}
+
+\begin{frame}[fragile]
+\frametitle{Implicit model}
+For a given partition $R_1, \ldots, R_M$, the model for the response is
+\[
+f(x) = \sum_{m = 1}^M c_m \mathbf{1}_{R_m}(x)
+\]
+For squared error loss, if $n_m = \sum_{i=1}^n \mathbf{1}_{R_m}(X_i)$, then 
+\[
+\hat{c}_m = n_m^{-1}\sum_{i:x_i \in R_m} Y_i
+\]
+
+\vsp
+As for the regions, $M$ encodes the tree complexity
+
+\vsp
+This is challenging as considering all possible regions is computationally \alo{infeasible}
+
+\script{This would involve sifting through all $M \leq n$ and all configurations for $R_m$}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Model selection for trees}
+As a greedy approximation, do the following
+\begin{enumerate}
+\item \smallCapGreen{Grow a large tree:} $T_{\max}$, stopping when some minimal terminal node
+size requirement is met
+\item \smallCapGreen{Cost-complexity pruning:}  For all $\lambda \geq 0$
+\[
+C_\lambda(T) = \sum_{m=1}^M \sum_{i:x_i \in R_m} (Y_i - \hat{c}_m)^2 + \lambda M
+\]
+\script{Note that often it is written that $|T| = M$}
+\item \smallCapGreen{Weakest link pruning:} 
+For each $\lambda$, there is a unique smallest $T_\lambda$ that minimizes $C_\lambda(T)$.  Eliminating nodes that
+produce the smallest increase in training error produces a sequence of solutions that must contain $T_{\lambda}$
+
+\script{many details ommitted}
+\end{enumerate}
+\end{frame}
+
+\transitionSlide{Classification trees}
+
+\begin{frame}[fragile]
+\frametitle{Classification trees}
+The only modification for \alo{classification} is choice of \alo{loss function}
+
+\vsp
+For region $m$ and class $g$, we get training proportions
+\[
+\hat{p}_{mg}(x) = \mathbf{1}_{R_m}(x) n_m^{-1} \sum_{i:X_i \in R_m} \mathbf{1}(Y_i = g)
+\]
+
+\vsp
+Our classification is
+\[
+\hat{g}(x) = \argmax_{g}  \hat{p}_{mg}(x)
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{How do we measure quality of fit?}
+Different measures of \alg{node impurity} (loss function in tree terminology)
+\begin{table}
+\begin{tabular}{ll}
+\smallCapGreen{classification error rate:} & $E = 1 - \max_k (\hat p_{mk})$ \\
+\smallCapGreen{Gini index:}                       & $G = \sum_k \hat p_{mk}(1-\hat p_{mk})$ \\
+\smallCapGreen{cross-entropy:}                 & $D = -\sum_k \hat p_{mk}\log(\hat p_{mk})$
+\end{tabular}
+\end{table}
+Both $G$ and $D$ can be thought of as measuring the purity of the classifier (small if all $\hat{p}_{mk}$ are near zero or 1).  These are preferred over the classification error rate.
+
+\script{Also, $E$ isn't differentiable and hence not as amenable to numerical optimization}
+
+\vsp
+We build a classifier by \alo{growing} a tree that minimizes $G$ or $D$.
+\end{frame}
+
+%\begin{frame}[fragile]
+%\frametitle{There's a problem}
+%Following this procedure {\huge \alo{overfits!}}
+%\vsp
+%
+%
+%
+%\begin{itemize}
+%\item The process described so far will fit overly complex trees, leading to poor predictive performance.
+%\item Overfit trees mean they have too many leaves.
+%\item To stretch the analogy further, trees with too many leaves must be \alg{pruned}.
+%\end{itemize}
+%\end{frame}
+%\begin{frame}[fragile]
+%\frametitle{Pruning the tree}
+%
+%\begin{itemize}
+%\item Cross-validation can be used to directly prune the tree, but it is far too expensive (computationally) to use in practice 
+%(combinatorial complexity)
+%\item Instead, we use \alg{weakest link pruning}
+%\[
+%\sum_{m=1}^{|T|} \sum_{i \in R_m} I(Y_i = \hat Y_{R_m}) + \lambda |T|
+%\]
+%\script{Here, any impurity measure can be used, but misclassification is most common}
+%
+%\item Now, cross-validation can be used to pick $\lambda$.
+%\end{itemize}
+%\end{frame}
+%
+
+\begin{frame}
+\frametitle{Results of trees on recession data}
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=2.3in,trim=50 0 0 50,clip]
+%  {../figures/recessionTrees1unpruned.pdf}
+%  \includegraphics[width=2.3in,trim=50 0 0 50,clip]
+%  {../figures/recessionTrees1pruned.pdf}
+%\end{figure}
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{cc}
+  \includegraphics[width=2.1in,trim=45 30 25 30,clip]
+  {../figures/recessionTrees1unpruned.pdf} &
+  \includegraphics[width=2.1in,trim=45 30 25 30,clip]
+  {../figures/recessionTrees1pruned.pdf} \\
+  Unpruned tree & Pruned Tree
+  \end{tabular}
+\end{table}
+
+\script{Tuning parameter chosen by cross-validation}
+
+\end{frame}
+\begin{frame}
+\frametitle{Results of trees on recession data}
+The trees on the previous slide were grown on the \alo{training} data (from 1960 to 2000)
+
+\vsp
+
+Now, we use them to predict on the \alo{test} data (from 2000 to 2011)
+\end{frame}
+%
+%\begin{frame}
+%\frametitle{Results of trees on recession data}
+%
+%\end{frame}
+
+\begin{frame}
+\frametitle{Results of trees on recession data}
+%\alr{These are awfully small. Can you regenerate the figures with
+%  pch=19, cex=3 or something similar?}
+\begin{table}[h!]
+  \centering
+\begin{tabular}{cc}
+  \includegraphics[width=2.1in,height=2.15in,trim=0 10 20 55,clip]
+  {../figures/recessionTrees2postProb.pdf} & 
+  \includegraphics[width=2.1in,height=2.15in,trim=0 10 20 55,clip]
+  {../figures/recessionTrees2class.pdf} \\
+  Posterior probability of prediction & Predictions
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}
+\frametitle{Advantages and disadvantages of trees}
+\begin{itemize}
+\item[+] Trees are very easy to explain (much easier than even linear regression).
+\item[+] Some people believe that decision trees mirror human decision.
+\item[+]  Trees can easily be displayed graphically no matter the dimension of the data.
+\item[+] Trees can easily handle qualitative predictors without the need to create dummy variables.
+\item[$-$] Trees aren't very good at prediction.
+\end{itemize}
+To fix this last one, we can try to grow many trees and average their performance. 
+\end{frame}
+
+%\transitionSlide{Multivariate adaptive regression splines (MARS)}
+%
+%\begin{frame}[fragile]
+%\frametitle{MARS}
+%Splines are an example of a \alo{kernel method} given by expansion in the piecewise linear basis functions
+%$(x-t)_+$ and $(t-x)_+$.
+%
+%\script{These are \alo{linear splines}. There are higher order polynomial versions}
+%
+%The collections of \alo{features} generated is $(X_j-t)_+$ and $(t-X_j)_+$, where $j = 1,\ldots,p$ and 
+%the \alg{knots} $t$ are at each of observed covariate values
+%
+%\script{There are now $2np$ basis functions (if everything is distinct}
+%
+%\vsp
+%\end{frame}
+
+\transitionSlide{Bagging}
+
+\begin{frame}[fragile]
+\frametitle{Bagging}
+Many methods (trees included) tend to be designed to have lower bias but high variance
+
+\vsp
+This means
+that if we split the training data into two parts at random and fit a decision tree to each part, the results could be quite \alo{different}
+
+\vsp
+A low variance estimator would yield \alo{similar} results if applied repeatedly to distinct data sets 
+
+\script{consider $\hat f(\x) = 0$ for all $\x$}
+
+\vsp
+\alg{Bagging}, also known as \alg{Bootstrap AGgregation}, is a general purpose procedure for reducing variance. 
+
+\vsp
+We'll use it specifically in the context of trees, but it can be applied more broadly.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bagging: The main idea}
+Suppose we have $n$ uncorrelated observations $Z_1, \ldots, Z_n$, each with variance $\sigma^2$.
+
+\vsp
+What is the variance of
+\[
+\overline{Z} = \frac{1}{n} \sum_{i=1}^n Z_i?
+\]
+\pause
+Answer: $\sigma^2/n$.
+
+\vsp
+More generally, if we have $B$ separate (uncorrelated) training sets, $1, \ldots, B$, we can form $B$ separate model fits, 
+$\hat f^1(\x), \ldots, \hat f^B(\x)$, and then average them:
+\[
+\hat f_{B}(\x) = \frac{1}{B} \sum_{b=1}^B \hat f^b(\x)
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bagging: The bootstrap part}
+Of course, this isn't practical as having access to many training sets is unlikely.  
+
+\vsp
+
+We therefore
+turn to the \alg{bootstrap} to simulate having many training sets.
+
+\vsp
+The bootstrap is a widely applicable statistical tool that can be used to quantify uncertainty without Gaussian approximations.
+
+\vsp
+Let's look at an example.
+\end{frame}
+
+\begin{frame}
+      \begin{center}
+        \alg{\huge Bootstrap detour}
+      \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bootstrap detour}
+Suppose we are looking to invest in two financial instruments, $X$ and $Y$.
+The return on these investments is random, but we still want to allocate our money in a risk minimizing way.
+
+\vsp
+That is, for some $\alpha \in (0,1)$, we want to minimize
+\[
+\textrm{Var}(\alpha X + (1-\alpha)Y)
+\]
+The minimizing $\alpha$ is:
+\[
+\alpha_* = \frac{\sigma_Y^2 - \textcolor<2>{red}{\sigma_{XY}}^2}{\sigma_X^2 + \sigma_Y^2 - 2\textcolor<2>{red}{\sigma_{XY}}^2}
+\]
+which we can estimate via
+\[
+\hat\alpha = \frac{\hat\sigma_Y^2 - \hat\sigma_{XY}^2}{\hat\sigma_X^2 + \hat\sigma_Y^2 - 2\hat\sigma_{XY}^2}
+\]
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Bootstrap detour}
+Now that we have an estimator of $\alpha$, it would be nice to have an estimator of its \alo{variability}.  In this
+case, computing a standard error is very difficult. 
+\vsp
+
+Suppose for a moment that we can simulate a large number of draws (say 1000) of the data, which has actual
+value $\alpha = 0.6$. 
+
+Then we could
+get estimates $\hat\alpha_1 ,\ldots, \hat \alpha_{1000}$.  
+\begin{figure}
+\centering
+\includegraphics[width=2.3in,trim=0 40 0 40,clip]{../figures/recessionTreesBootstrap1.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bootstrap detour}
+\begin{figure}
+\centering
+\includegraphics[width=1.75in,trim=0 40 0 40,clip]{../figures/recessionTreesBootstrap1.pdf}
+\end{figure}
+
+This is a histogram of all 1000 estimates.  The mean of all of these is:
+\[
+\overline{\alpha} = \frac{1}{1000} \sum_{r=1}^{1000} \hat\alpha_r = 0.599,
+\]
+which is very close to 0.6 (red line), 
+and the standard error is
+\[
+\sqrt{ \frac{1}{1000 -1} \sum_{r=1}^{1000} (\hat\alpha_r - \overline{\alpha})^2 }= 0.035.
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bootstrap detour}
+The standard error of  0.035 gives a very good idea of the accuracy of $\hat \alpha$ for a single sample.  Roughly
+speaking, for a new random sample, we expect $\hat\alpha \in (\alpha - 2*0.035, \alpha + 2*0.035)$.
+
+\vsp
+In practice, of course, we cannot use this procedure as it relies on being able to draw a large number of 
+(independent) samples from the same distribution as our data.  
+
+\vsp
+This is where the \alg{bootstrap} comes in.
+
+\vsp
+We instead draw a large number of samples directly from our observed data.  This sampling is done
+\alo{with replacement}, which means that the same data point can be drawn multiple times.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bootstrap detour: Small example}
+Suppose we have data $X = (4.3,3,7.2,6.9,5.5)$.
+
+\vsp
+Then we can draw bootstrap samples, which might look like:
+\begin{align*}
+X_1^* &= (7.2,4.3,7.2,5.5,6.9) \\
+X_2^* &= (6.9, 4.3 ,3.0 ,4.3 ,6.9) \\
+&\ \ \vdots \\
+X_B^* &= (4.3 ,3.0 ,3.0 ,5.5 ,6.9)
+\end{align*}
+It turns out these are all draws from the same (empirical) distribution as our data, which should be close
+to the actual distribution (Glivenko-Cantelli theorem).
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bootstrap detour}
+Now, the bootstrap estimator of the standard error is:
+\[
+\textrm{SE}_B(\hat\alpha) = \sqrt{\frac{1}{B-1} \sum_{b=1}^B \left(\hat\alpha_b{*} - \frac{1}{B}\sum_{s=1}^B \hat\alpha_s^{*}\right)^2}
+\]
+
+\begin{table}
+\begin{tabular}{cc}
+\includegraphics[width=2in,trim=0 40 0 40,clip]{../figures/recessionTreesBootstrap1.pdf} &
+\includegraphics[width=2in,trim=0 40 0 40,clip]{../figures/recessionTreesBootstrap2.pdf} \\
+Sampling distribution of $\hat\alpha$    & Sampling distribution of $\hat\alpha$ \\
+from repeated draws of same data         &  estimated from bootstrap draws  \\
+              (impossible)                                  &           (possible) 
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bootstrap: End detour}
+Summary:
+\vsp
+
+Suppose we have data $Z_1, \ldots, Z_n$ and we want to get an idea of the sampling
+distribution of some statistic $\hat{f}(Z_1,\ldots,Z_n)$.  Then we do the following
+\begin{enumerate}
+\item Choose some large number of samples, $B$. 
+\item For each $b = 1,\ldots,B$, draw a new dataset from $Z_1, \ldots, Z_n$, call it 
+$Z_1^*, \ldots, Z_n^*$. 
+\item Compute $\hat f_b^* = \hat f(Z_1^*, \ldots, Z_n^*)$. 
+\item Now, we can estimate the distribution of $\hat f(Z_1,\ldots,Z_n)$ by looking at the $B$ draws, $\hat f_b^*$. 
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+             \begin{center} 
+  \alg{\huge End detour}
+        \end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bagging: The bootstrap part}
+Now, instead of having $B$ separate training sets, we do $B$ bootstrap samples.
+$\hat f_1^{*}(\x), \ldots, \hat f_B^{*}(\x)$, and then average them:
+\[
+\hat f_{\textrm{bag}}(\x) = \frac{1}{B} \sum_{b=1}^B \hat f_b^{*}(\x)
+\]
+This process is known as \alg{Bagging}
+
+\vsp
+Note that if we use a linear smoother, then we will reproduce the original estimator as $B \rightarrow \infty$
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Bagging with squared error}
+Suppose $Z_i \sim \P$ and $f_{bag}^*(x) = \E \hat{f}^*(x)$, where $\hat{f}^*$ is trained on a new draw\footnote{The 
+only difference from actual bagging  is that here we are drawing from the unknown $\P$ instead of $\hat{\P}$.  We'll discuss in a moment
+the implications of this.}
+from $\P$
+
+
+
+\begin{align*}
+\P(Y -  \hat{f}^*(x))^2 
+& = 
+\P(Y - f_{bag}^*(x))^2 + \P(f_{bag}^*(x) - \hat{f}^*(x))^2 \\
+& \geq
+\P(Y - f_{bag}^*(x))^2
+\end{align*}
+\smallCapGreen{Implication:} We cannot increase test squared error by bagging.  
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bagging for classification}
+For classification, there isn't a straightforward additive decomposition of bias and variance
+
+\vsp
+Bagging a 
+\begin{itemize}
+\item good classifier can make it better
+\item bad classifier can make it worse
+\end{itemize}
+\vsp
+
+\smallCapGreen{Intuition:} Suppose the true response is always $Y = 1$ at $x$. Suppose for a
+particular classifier $\P(\hat{g}(x) = 1) = 0.49$.  Then, $\P(\hat{g}(x) \neq Y) = 0.51$.  However,
+for large $B$,  $\P(\hat{g}_{bag}(x) \neq Y) \rightarrow 1$
+\end{frame}
+
+\begin{frame}
+  \begin{columns}[c]
+    \begin{column}{.45\paperwidth}
+      \begin{center}
+        \alg{\huge Bagging trees}
+      \end{center}
+    \end{column}
+    \begin{column}{.5\paperwidth}
+      \begin{center}
+        \includegraphics[height=.8\paperheight]{../figures/bagtree.jpg}
+      \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Bagging trees}
+The procedure for trees is the following
+\begin{enumerate}
+\item Choose a large number $B$.
+\item For each $b = 1,\ldots, B$, grow an unpruned tree on the $b^{th}$ bootstrap draw from the data.
+\item Average all the predictions of the trees together 
+
+\script{For classification, the amounts to \alo{voting} with the highest proportion of classifications}
+\end{enumerate}
+\vsp
+
+Each tree, since it is unpruned, will have high variance and
+low bias.
+
+\vsp
+Therefore averaging many trees results in an estimator that has lower variance and still low bias.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Bagging trees}
+If the class probability estimates are desired, \alo{do not} use these bootstrap proportions
+
+\vsp
+\smallCapGreen{Intuition:}  Suppose the true probability of a 1 at $x$ is 0.66.  If each of the bagged classifiers
+are correct, then our estimate is 1.
+
+\vsp
+It is better to average the probability estimates instead (the proportions returned by each tree at a terminal node)
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Bagging trees}
+Now that we are growing a large number ($B$) of random trees, we can't directly look at 
+the \alr{dendrogram}
+
+\vsp
+We no longer have that nice diagram that shows the segmentation of the predictor space 
+\script{More accurately, we have $B$ of them}
+
+\vsp
+However, we do get some helpful information instead:
+
+\vsp
+
+\begin{itemize}
+\item Mean decrease variable importance
+\item Permutation variable importance
+\item Out-of-Bag error estimation (OOB)
+
+\script{Each time a tree is grown,
+we can get its prediction error on the unused observations.  We average this over all bootstrap samples}
+\item Proximity plot
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Bagging trees: Mean decrease}
+To recover some information, we can do the following:
+\begin{itemize}
+\item[1.] For each of the $B$ trees and each of the $p$ variables, we record the amount that the Gini index is reduced
+by the addition of that variable 
+\item[2.] Report the average reduction over all $B$ trees.
+\end{itemize}
+
+This gives us an indication of the \alo{importance} of a variable\footnote{A very important caveat to this interpretation
+will be coming up when we talk about adding random, uncorrelated predictors}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{Bagging trees: Gini importance}
+
+\begin{figure}
+\centering
+\includegraphics[width=2.7in]{../figures/recessionTreesBaggingImportance}
+%\includegraphics[width=2.3in]{../figures/recessionTreesRFimportance}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Out-of-Bag samples (OOB)}
+One can show that, on average, drawing $n$ samples from $n$ observations with replacement  results
+in about 2/3 of the observations being selected.
+
+\vsp
+The remaining one-third of the observations not used are referred to as \alg{out-of-bag (OOB)}
+
+\vsp
+We can think of it as a for-free \alo{cross-validation}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Bagging trees: Permutation}
+Consider the $b^{th}$ tree $T_b$
+
+\begin{enumerate}
+\item The OOB prediction accuracy of $T_b$ is recorded
+\item Then, the $j^{th}$ variable is randomly permuted in the OOB samples
+\script{ie: If $\data_{OOB,b} = (Z_{t_1},\ldots,Z_{t_{n/3}})$ then draw a new $t_1^*,\ldots,t_{n/3}^*$ without replacement
+and predict $\data_{OOB,b}^* = (Z_{t_1}^*,\ldots,Z_{t_{n/3}}^*)$, where $Z_{t_i}^* = (Y_{t_i},X_{t_i,1},\ldots,X_{t_i^*,j},\ldots,X_{t_i,p})$}
+\item The prediction error is recomputed and the change in prediction error is recorded
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Proximity plot}
+For the $b^{th}$ tree, we can examine which OOB observations are assigned to the same \alo{terminal node}
+
+\vsp
+Form an $n \times n$ matrix $P$ and increment $P[i,i'] \leftarrow P[i,i'] + 1$ if $Z_{i}$ and $Z_{i'}$ are assigned to the same terminal node
+
+\vsp
+Now, use some sort of dimension reduction technique to visualize the data in 2-3 dimensions
+
+\script{Multidimensional scaling is most commonly used (between observation distances are preserved)}
+
+\vsp
+The idea is that even if the data have combinations of qualitative/quantitative variables and/or have high
+dimension, we can view their similarity through the \alo{forward operator} of the bagged estimator
+\end{frame}
+
+%\begin{frame}
+%\frametitle{Variable importance}
+%In every tree grown in the forest, put down the oob cases and count the number of votes cast for the correct class. Now randomly permute the values of variable m in the oob cases and put these cases down the tree. Subtract the number of votes for the correct class in the variable-m-permuted oob data from the number of votes for the correct class in the untouched oob data. The average of this number over all trees in the forest is the raw importance score for variable m.
+%
+%If the values of this score from tree to tree are independent, then the standard error can be computed by a standard computation. The correlations of these scores between trees have been computed for a number of data sets and proved to be quite low, therefore we compute standard errors in the classical way, divide the raw score by its standard error to get a z-score, ands assign a significance level to the z-score assuming normality.
+%
+%If the number of variables is very large, forests can be run once with all the variables, then run again using only the most important variables from the first run.
+%
+%For each case, consider all the trees for which it is oob. Subtract the percentage of votes for the correct class in the variable-m-permuted oob data from the percentage of votes for the correct class in the untouched oob data. This is the local importance score for variable m for this case, and is used in the graphics program RAFT.
+%\end{frame}
+
+%\begin{frame}[fragile]
+%\frametitle{Bagging trees: Gini importance}
+%
+%\emphasis{8cm}{Observation:}{Every time a split of a node is made on a \alo{covariate},
+%the gini impurity criterion for the two descendent nodes is less than the parent node}
+%
+%\vvsp
+%Hence, adding up the \alo{gini decreases} for each covariate over all trees in the forest 
+%gives an indication of variable importance
+%
+%\vsp
+%Intuitively an important covariate is one that if split upon, it leads to a large drop in the Gini index
+%\end{frame}
+
+\transitionSlide{Random Forest}
+\begin{frame}[fragile]
+\frametitle{Random Forest}
+\alg{Random Forest} is a small extension of Bagging, in which the bootstrap trees are \alo{decorrelated}  
+
+\vsp
+The idea is, we draw a bootstrap sample and start to build a tree. 
+\begin{itemize}
+\item[-] At each split, we randomly select
+$m$ of the possible $p$ predictors as candidates for the split. 
+\item[-] A new sample of size $m$ of the predictors is taken at each split. 
+\end{itemize}   
+
+\vsp
+Usually, we use about $m = \sqrt{p}$  ($p/3$ for regression)\Note
+
+\script{This would be 7 out of 56 predictors for GDP data}
+
+\vsp
+In other words, at each split, we aren't even allowed to consider the majority of possible predictors!
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Random forest}
+\alo{What is going on here?}
+
+\vsp
+Suppose there is 1 really strong predictor and many mediocre ones. 
+
+\begin{itemize}
+\item[-] Then each tree will have this one predictor in it,
+\item[-] Therefore, each tree will look very \alo{similar} (i.e. highly correlated).  
+\item[-] Averaging highly correlated things leads to much less variance reduction than if they were uncorrelated.
+\end{itemize}
+\vsp
+If we don't allow some trees/splits to use this important variable, each of the trees will be much less similar and
+hence much less correlated.
+
+\vsp
+Bagging is Random Forest when $m = p$, that is, when we can consider all the variables at each split.
+\end{frame}
+
+\begin{frame}
+\frametitle{Random forest}
+An average of $B$ i.i.d random variables has variance
+\[
+\frac{\sigma^2}{B}
+\]
+
+\vsp
+An average of $B$ i.d random variables has variance (not independent)\Note
+\[
+\rho\sigma^2 + \frac{(1-\rho)\sigma^2}{B}
+\]
+for correlation $\rho$
+
+\vsp
+As $B \rightarrow \infty$, the second term goes to zero, but the first term remains
+
+\vsp
+Hence, correlation of the trees limits the benefit of averaging
+\end{frame}
+\begin{frame}
+\frametitle{Sensitivity and specificity for recessions}
+\begin{tabular}{lp{8cm}}
+\smallCapGreen{Sensitivity:} & The proportion of times we label \alb{recession}, given 
+                                                      that \alb{recession} is the correct answer. \\
+\smallCapGreen{Specificity:} & The proportion of times we label \alb{no recession}, given  
+                                                      that \alb{no recession} is the correct answer.  
+\end{tabular}
+\vsp
+
+We can think of this in terms of hypothesis testing.  If
+\[
+H_0: \textrm{ no recession},
+\]
+then 
+\vsp
+
+\begin{tabular}{lp{5.75cm}}
+\smallCapGreen{Sensitivity:} & $P(\textrm{reject } H_0 | H_0 \textrm{ is false})$, that is: 1 - $P$(Type II error) \\
+\smallCapGreen{Specificity:} & $P(\textrm{accept } H_0 | H_0 \textrm{ is true})$, that is: 1 - $P$(Type I error) \\
+\end{tabular}
+\end{frame}
+
+\begin{frame}
+\frametitle{Confusion matrix}
+Alternatively, we can report our results in a matrix:
+\vsp
+
+\begin{tabular}{ll|cc}
+                      & &\multicolumn{2}{c}{\alo{Truth}} \\
+                      & & Growth  & Recession   \\
+                      \hline
+\alo{Our}               & Growth & (A) & (B)\\  
+\alo{Predictions} & Recession        & (C) &  (D)
+\end{tabular}
+\vsp
+
+For each observation in the test set, we compare our prediction to the truth.
+
+\vsp 
+The total number of each combination is recorded in the table.
+
+\vsp 
+The overall miss-classification rate is 
+\[
+\frac{\textrm{(B)} + \textrm{(C)}}{\textrm{(A)} + \textrm{(B)} + \textrm{(C)} + \textrm{(D)}}
+=
+\frac{\textrm{(B)} + \textrm{(C)}}{n_{\textrm{test}}}
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Tree results: Confusion matrices}
+\begin{tabular}{cc}
+\parbox{1cm}{\alo{Our} \\ \alo{Preds.}}
+% \alo{Predictions}
+&
+\begin{tabular}{ll|rr|r}
+                                          &             &\multicolumn{2}{c}{\alo{Truth}} &\\
+                                          &             & Growth  & Recession  & Mis-Class \\
+                      \hline
+\smallCapGreen{Null}  & Growth & 111 & 26  & \\  
+                                          & Recession        & 0 & 0 & 18.9\% \\ 
+                                          \hline
+\smallCapGreen{Tree} & Growth & 99 & 3 & \\  
+                                          & Recession        & 12 & 23 & 10.9\% \\
+                      \hline
+              \smallCapGreen{Random} & Growth & 102 & 5& \\  
+ \smallCapGreen{Forest}     & Recession        &  9 &  21& 10.2\% \\
+                      \hline
+ \smallCapGreen{Bagging}  & Growth & 104 & 3 & \\  
+                                               & Recession        &  7 &  23 & 7.3\% 
+\end{tabular}
+\end{tabular}
+\vsp
+
+Note that the OOB error estimate for \smallCapGreen{bagging} is:
+\begin{tabular}{cc}
+%\parbox{1.4cm}{\textcolor{white}{moo} \\ \textcolor{white}{moo} \\ \alo{Our} \\ \alo{Predictions}}
+\parbox{1cm}{\alo{Our} \\ \alo{Preds.}}
+% \alo{Predictions}
+&
+\begin{tabular}{ll|rr|r}
+                                          &             &\multicolumn{2}{c}{\alo{Truth}} &\\
+                                          &             & Growth  & Recession  & Miss-Class \\
+                      \hline
+ \smallCapGreen{Bagging}  & Growth & 400 & 10 & \\  
+                                               & Recession        &  21 &  46 & 6.5\% 
+\end{tabular}
+\end{tabular}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Tree results: Sensitivity \& specificity}
+\begin{table}
+\begin{tabular}{l|rr}
+                                          &    Sensitivity & Specificity \\
+                      \hline
+\smallCapGreen{Null}  &   0.000 & 1.000 \\
+                                          &          & \\
+                                          \hline
+\smallCapGreen{Tree} & 0.884 & 0.891 \\
+                                          &          & \\      
+                      \hline
+\smallCapGreen{Random} & 0.807 & 0.918 \\
+ \smallCapGreen{Forest}    & \\
+                      \hline
+ \smallCapGreen{Bagging}  & 0.884 & 0.936 \\
+                                                   & & \\
+\end{tabular}
+\end{table}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Results of Bagging on recession data}
+%\alr{Same here: can you make the points bigger, solid?}
+\begin{table}
+  \centering
+  \begin{tabular}{cc}
+  \includegraphics[width=2.1in,trim=03 0 30 40,clip]
+  {../figures/recessionTrees2classBag.pdf} &
+  \includegraphics[width=2.1in,trim=03 0 30 40,clip]
+  {../figures/recessionTrees2class.pdf} \\
+Bagging & Single tree
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Trees in \alr{R}}
+\begin{verbatim}
+out.tree   = tree(Y~.,data=X,subset=train,split='dev')
+out.tree.cv = cv.tree(out.tree,K=3)
+best.k     = out.tree.cv$k[which.min(out.tree.cv$dev)]
+out.tree   = prune.tree(out.tree.orig,k=best.k)
+#Plots
+plot(out.tree.orig)
+text(out.tree.orig)
+#Bagging/Random Forests
+require(randomForest)
+out.rf  = randomForest(Y~.,data=X,subset=train,mtry=m)
+#Variable importance 
+varImpPlot(out.rf,type=2,main='') 
+\end{verbatim}
+\end{frame}
+
+\begin{frame}
+\frametitle{Additional random forest topics}
+\smallCapGreen{Claim:} Random forest cannot overfit.
+\vsp
+This is and isn't true.  Write
+\[
+\hat{f}_{rf}^B = \frac{1}{B} \sum_{b=1}^B T(x;\Theta_b)
+\]
+where $\Theta_b$ characterizes the $b^{th}$ tree
+
+\script{That is, the split variables, cutpoints of each node, terminal node values}
+\vsp
+
+Increasing $B$ does not cause Random forest to overfit, rather removes the
+Monte-Carlo-like approximation error
+\[
+\hat{f}_{rf}(x) = \E_\Theta T(x,\Theta) = \lim_{B\rightarrow\infty}\hat{f}_{rf}^B
+\]
+
+\vsp
+
+However, \alo{this limit can overfit the data}, the average of fully grown trees can result
+in too complex of a model
+
+\script{Note that Segal (2004) shows that a small benefit can be derived by stopping each tree short,
+but thus induce another tuning parameter}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Additional random forest topics}
+Things I'd like to cover but may not 
+
+\script{AKA possible short presentation topics}
+
+\begin{itemize}
+\item Variance and decorrelation effect (showing precisely how random forest may work/not work)
+\item Introduction of noise covariates improves performance
+\item Using \alo{subsampling} instead of bootstrap to generate trees
+
+\script{This is an idea I had while writing this up.  I don't know if this exists, but it seems to work in many cases the bootstrap
+doesn't and is easier to do theory (just use Hoeffding's inequalty for $U$-statistics)}
+\item Adaptive nearest neighbors
+\end{itemize}
+\end{frame}
+\transitionSlide{Boosting}
+
+\begin{frame}[fragile]
+\frametitle{History}
+Boosting was proposed in the computational learning literature in a series of papers:
+\begin{itemize}
+\item Schapire (1990)
+\item Freund (1995)
+\item Freund and Schapire (1997)
+\end{itemize}
+
+Let's examine a bit the history of boosting, through these three papers
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+The first simple boosting procedure was developed using the \alg{PAC-learning} framework
+
+\vsp
+We covered PAC-learning in the case of generalization error bounds for lasso
+
+\vsp
+In classification, there is more of a computer science flair to notation/terminology that is helpful to know
+when reading the literature
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+Let's introduce the following notation\footnote{I'm going to use standard notation from computer science
+for this section.  It will conflict with previous notation, but it quite firmly entrenched in the literature.}
+\begin{itemize}
+\item A \smallCapGreen{Concept} $c$ is a Boolean function on some domain of \smallCapGreen{Instances} $\mathcal{X}$
+and contained in a \smallCapGreen{Concept class} $\mathcal{C}$
+
+\script{Here think of concept $\leftrightarrow$ prediction procedure and $\mathcal{X}$ as the domain of the covariates.
+Also, the concept class $\leftrightarrow$ parameter space}
+
+\item The learner is assumed to have access to a source of \smallCapGreen{examples} $EX$, that is randomly
+and independently drawn from $\mathcal{X}$ according to a fixed distribution $\P$, returning an instance $x$
+and label $c(x)$ according to the unknown \smallCapGreen{target concept}
+
+\item Given access to $EX$, the learning algorithm outputs a \smallCapGreen{Hypothesis} $h \in \mathcal{H}$, which is a 
+prediction rule on $\mathcal{X}$
+\end{itemize}
+\end{frame}
+
+%\begin{frame}[fragile]
+%\frametitle{PAC-learning for classification}
+%
+%\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+PAC-learning came about as a response to previous computer science attempts to find \alg{consistent learners},
+
+\script{This is when we can perfectly classify a given set of instances $\leftrightarrow$ zero training error.  These
+concept classes aren't truly interesting, as they are either trivial, impossible, and/or have super-polynomial growth 
+in complexity}
+
+\vsp
+The language of PAC-learning was developed to define whether a concept class $\mathcal{C}$ is \alg{learnable}
+
+\vsp
+Let $\textrm{err} = \P(h(x) \neq c(x))$
+
+\vsp
+
+A concept class $\mathcal{C}$ is \alg{strongly learnable} (with $\mathcal{H}$) provided there exists an algorithm $A$ such that 
+for all $\{c \in \mathcal{C}, \P \textrm{ on } \mathcal{X}, \epsilon > 0, \delta \leq 1\}$, there exists an $h \in \mathcal{H}$ where
+\[
+\P^n (\textrm{err} \leq \epsilon) \geq \delta
+\]
+\script{The number of instances from $EX$ required grows $\leq$ polynomially in $1/\epsilon,1/\delta$}
+%\[
+%\mathcal{X} = \cup_{n \geq 1} \mathcal{X}_n \quad \textrm{and} \mathcal{C} = \cup_{n \geq 1} \mathcal{C}_n
+%\]
+%
+%\script{For asymptotic reasons, we factor the concept class and instances according to a parameter $n$}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example:} Let 
+\begin{itemize}
+\item The instances be $\mathcal{X} = \R$,
+\item The concept class $\mathcal{C}$ be the set of positive half lines 
+
+\script{That is, an object that splits $\R$ into two pieces, labeling things to the left negative and the right positive}
+\end{itemize}
+\vsp
+
+The consistent learner would find any $h \in \mathcal{H} = \mathcal{C}$ in the transition region from negative to positive
+
+\vsp
+\begin{itemize}
+\item Is this a PAC learner?  
+\item If so, how many examples do we need in order to ensure the learning algorithm is 
+\alg{$\epsilon$-good}?
+
+\script{That is, $\textrm{err} \leq \epsilon$}
+\item Does the selection of the point in the transition region matter?
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example (continued):}  Fix an $h$ and $c$.   Let $h_*,c_* \in \R$ be the 
+classification boundaries. Then, we only make a mistake
+if $x \in [c_*-h_*,c_*+h_*]$.  Hence, 
+%\[
+%\textrm{err} \leq \epsilon \alr{\Leftrightarrow} \P(h(x) \neq c(x)) \leq\epsilon 
+%\alr{\Leftrightarrow} \P([c_*-h_*,c_*+h_*])\leq\epsilon
+%\]
+%defines two regions
+\[
+\textrm{err}=\P(h(x) \neq c(x))= \P([c_*-h_*,c_*+h_*])
+\]
+
+
+%\vsp
+%As long as neither of these events happen, we can be assured that $h$ is \alo{$\epsilon$-good}
+
+\vsp
+\smallCapGreen{Note:} From now on, think of 
+$h$ as being formed based on $n$ data points $x_1,\ldots,x_n \stackrel{i.i.d}{\sim} \P$, and $\data = \{x_i\}_{i=1}^n$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+%Let's just look to the right of $c$
+%
+%\script{The other side follows symmetrically}
+%\vsp
+%
+%The hypothesis $h$ (trained on the data) is more than $\epsilon$ to the right of $c$ (measured by $D$)
+%
+%\script{Let's denote this \alo{region} $E_+$, and the event $h - c > \epsilon$ as $e_+$}
+
+\smallCapGreen{Example (continued):} Fix an $\epsilon > 0$.
+
+Let $g_+$ be the minimal quantity such that 
+$G_+ = [c_*,g_+]$ obeys $\P(G_+) \geq \epsilon$.  
+%\vsp
+%
+%We want to characterize $\textrm{err} \leq \epsilon$ in terms of $E_+$.
+%
+
+\script{Define $G_-$ and $g_-$ similarly for the other side of the interval}
+\vsp
+%Let $\alb{\P(x_1 \in E_+)} = \alb{\epsilon}$.  Then:
+
+Let's define two (bad) events 
+
+\begin{itemize}
+\item $B_+ = (g_+,\infty)$
+\item $B_- = (-\infty, g_-)$
+\end{itemize}
+\vsp
+
+\smallCapGreen{Intuition:} If any $x \in \data$ falls in $G_+$, $h_*$ will be in $G_+$ as 
+\begin{itemize}
+\item[] $x \in G_+ \Rightarrow c(x) = +$
+\item[] $x < c_* \Rightarrow c(x) = -$
+\end{itemize}
+%So, $\textrm{err} \leq \epsilon$ as
+%\[
+% \P([c_*-h_*,c_*+h_*])\leq \epsilon
+%\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example (continued):} 
+\vsp
+
+%So, if $G_+$ is a `good set', we need to control the probability of the `bad set' $B_+$
+%\vsp
+
+By the previous argument, we can bound the probability of $B_+$
+%Let $\alb{\epsilon} = \alb{\P(x \in E_+)}$
+\begin{align*}
+\P^n(h_* \in B_+) 
+& \leq 
+\P^n(x_1 \notin G_+,\ldots, x_n \notin G_+)  \parenthetical{\quad}{\textrm{product measure}}\\
+& =
+\P(x_1 \notin G_+)\cdots\P(x_n \notin G_+) \\
+& \leq
+(1-\epsilon)^n  \\
+& \leq
+e^{-\epsilon n} \parenthetical{\quad}{1+x \leq e^{x}}
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example (continued):} 
+
+\vsp
+\alb{
+A concept class $\mathcal{C}$ is strongly learnable (with $\mathcal{H}$) provided there exists an algorithm $A$ such that 
+for all $\{c \in \mathcal{C}, \P \textrm{ on } \mathcal{X}, \epsilon > 0, \delta \leq 1\}$, there exists an $h \in \mathcal{H}$ where
+\[
+\P^n (\textrm{err} \leq \epsilon) \geq \delta
+\]
+}
+
+
+%\[
+%\P^n (\textrm{err} > \epsilon) 
+%\]
+\begin{align*}
+\P^n (\textrm{err} > \epsilon) 
+& =
+\P^n(\P([c_*-h_*,c_*+h_*] )> \epsilon) \\
+& \leq
+\P^n(\P([c_*-h_*])>\epsilon \cup \P([c_*+h_*])> \epsilon) \\
+& \leq
+\P^n(\P([c_*-h_*])>\epsilon) +  \P^n(\P([c_*+h_*])> \epsilon) \\
+& \leq
+\P^n(h_* \in B_-) +  \P^n(h_* \in B_+) \\
+& \leq 
+2e^{-\epsilon n}
+\end{align*}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example (conclusion):} 
+\vsp
+
+\script{The number of instances from $EX$ required grows $\leq$ polynomially in $1/\epsilon,1/\delta$}
+\vsp
+
+Let $\delta > 0$ be given.
+
+\[
+\P^n (\textrm{err} > \epsilon)  \leq 2e^{-\epsilon n} \stackrel{set}{=} \delta
+\]
+Result: $n > \epsilon^{-1} \log(2/\delta)$, this concept class 
+is PAC-learnable
+
+\vsp
+Alternatively, invert to find that with probability $1-\delta$
+\[
+\textrm{err} \leq \frac{1}{n} \log(2/\delta)
+\]
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{A general result:} 
+
+\vsp
+Suppose $|\mathcal{H}| < \infty$ (that is; we have a finite hypothesis space).  If an algorithm $A$ finds
+a hypothesis $h \in \mathcal{H}$ that is  consistent with $n$ examples, where 
+\[
+n > \frac{1}{\epsilon}(log(|\mathcal{H}|) + \log(1/\delta)).
+\]
+Then
+\[
+\P^n(\textrm{err} > \epsilon) \leq \delta
+\]
+%\script{That is, $h$ is $\epsilon$-good}
+
+\vsp
+Why does the bound depend on $|\mathcal{H}|$?
+
+\pause
+\script{The more rules, the more we can fit the training data (and then do worse predictions)}
+\pause
+\vsp
+
+Why is the bound logarithmic in $|\mathcal{H}|$?
+\pause
+
+\script{Name each hypothesis in binary.  How many bits do we need?  
+\pause$\log_2|\mathcal{H}|$}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{A general result (Proof):} 
+\begin{align*}
+\P^n (\textrm{err} > \epsilon) 
+& =
+\P^n (\textrm{err} > \epsilon \cap h \textrm{ is consistent})  \\
+& \leq 
+\P^n (\textrm{err} > \epsilon \cap \exists h \in \mathcal{H}: h \textrm{ is consistent})  \\
+& \leq 
+\P^n (\exists h \textrm{ that is } \epsilon-\textrm{bad}, h \textrm{ is consistent})  \\
+& \leq 
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} \P^n (h \textrm{ is consistent})  \\
+& = 
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} \P^n (h(x_1) = c(x_1), \ldots, h(x_n) = c(x_n)) \\
+& = 
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} \prod_{i=1}^n \P (h(x_i) = c(x_i)) \\
+& \leq
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} (1-\epsilon)^n
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{A general result (Proof):} 
+\begin{align*}
+\P^n (\textrm{err} > \epsilon) 
+& \leq
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} (1-\epsilon)^n \\
+& =
+|\{h: h \textrm{ is } \epsilon-\textrm{bad}\}| (1-\epsilon)^n \\
+& \leq
+|\mathcal{H}| (1-\epsilon)^n \\
+& \leq
+|\mathcal{H}| e^{-\epsilon n} \\
+& \stackrel{set}{=}
+\delta
+\end{align*}
+Invert to get result
+
+\vsp
+The trick is that we're leveraging the finite nature of $\mathcal{H}$ to get a uniform bound
+
+\script{This is why the set $\{h: h \textrm{ is } \epsilon-\textrm{bad}\}$ is nonrandom, it only depends
+on $c$, $\mathcal{H}$, $\P$, and $\epsilon$.  Tracking a particular consistent $h$ is harder, as it is random}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+What we need to refine this result for infinite $\mathcal{H}$ is to know more about its \alo{intrinsic} complexity
+
+\vsp
+A common notion for this is known as \alg{Vapnik-Chervonenkis (VC)} dimension
+
+\vsp
+This gives us a better idea of the \alo{complexity} of the hypothesis space $\mathcal{H}$
+\end{frame}
+
+\transitionSlide{VC-dimension}
+\begin{frame}[fragile]
+\frametitle{Shattering}
+Let $\mathcal{A}$ be a class of sets, such as
+\begin{itemize}
+\item $\mathcal{A} = \{(-\infty,t]:t\in\R\}$
+\item $\mathcal{A} = \{(a,b]:a \leq b\}$
+\item $\mathcal{A} = $ all rectangles in $\R^d$
+\end{itemize}
+Let $F = \{x_1,\ldots,x_n\}$ be a finite set, and $G \subseteq F$
+\script{$F$ is always finite}
+
+\vsp
+We say that \alg{$\mathcal{A}$ picks out $G$} (relative to $F$) if $\exists A \in \mathcal{A}$ s.t.
+\[
+A \cap F = G
+\]
+\smallCapGreen{Example:} Let $\mathcal{A} = \{(a,b]:a \leq b\}$, $F = \{1,2,7,8,9\}$ and $G = \{2,7\}$.  Then
+$\mathcal{A}$ picks out $G$ (choose $A = (1.5,7.5]$).
+
+However, $G = \{1,9\}$ cannot be picked out by $\mathcal{A}$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Shattering}
+Let $\alb{S(\mathcal{A},F)}$ be the number of subsets of $F$ that can be picked out by $\mathcal{A}$
+
+\vsp
+Of course, $\alb{S(\mathcal{A},F)} \leq 2^n$
+
+\script{The cardinality of the power set of $F$}
+
+\vsp
+We say that \alg{$F$ is shattered by $\mathcal{A}$} if $S(\mathcal{A},F) = 2^n$
+
+\vsp
+Also, let $\mathcal{F}_n$ be all finite sets with $n$ elements
+
+\vsp
+Then we have the \alg{shattering coefficient} of $\mathcal{A}$
+\[
+s_n(\mathcal{A}) = \sup_{F \in \mathcal{F}_n} S(\mathcal{A},F)
+\]
+
+\vsp
+\smallCapGreen{Famous theorem:} Let $\mathcal{A}$ be a class of sets.  Then
+\[
+\P(\sup_{A \in \mathcal{A}} |\hat{\P}(A) - \P(A)| > \epsilon) \leq 8 s_n(\mathcal{A}) e^{-n\epsilon^2/32}
+\]
+\script{Vapnik, Chervonenkis (1971)}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Shattering}
+This partly solves the problem.  But, how big can $s_n(\mathcal{A})$ be?
+
+\vsp
+Often times, $s_n(\mathcal{A}) = 2^n$ for all $n$ up to some $d$, then $s_n(\mathcal{A}) < 2^n$
+for all $n > d$
+
+\vsp
+This $d$ is the \alg{Vapnik-Chervonenkis (VC) dimension}
+
+\vsp
+\smallCapGreen{Note:} Often times, the subset formulation is converted to functions by assigning labels
+to the points. 
+
+\script{This should be compared with SVMs, where we wish to separate points with hyperplanes}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{VC-dimension}
+Imagine that $\mathcal{A}$ is the set of hyperplanes in $\R^2$.  Let $\mathcal{F}_n$ be all sets of $n$ points.
+
+\vsp
+We can shatter almost all $F \in \mathcal{F}_3$ (one is enough, though)
+
+\vsp
+But, we cannot shatter any $F \in \mathcal{F}_4 \Rightarrow d = 3$ 
+\begin{figure}
+\centering
+\includegraphics[width=3.75in]{../figures/vcDimension.pdf}
+\caption*{Bousquet et al. ``Introduction to Statistical learning Theory''}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{VC-dimension}
+It is tempting to think that the number of parameters determines the VC dimension
+\vsp
+
+However, if we let $\mathcal{A} = \{\sin(tx): t \in \R\}$, this is a one parameter family.
+
+\vsp 
+$\mathcal{A}$ can shatter a $F$ for any $\mathcal{F}_n \Rightarrow d = \infty$
+\begin{figure}
+\centering
+\includegraphics[width=3in]{../figures/vcDimensionSin.pdf}
+\caption*{Bousquet et al. ``Introduction to Statistical learning Theory''}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{VC-dimension and Sauer's theorem}
+Suppose that $\mathcal{A}$ has VC-dimension $d < \infty$.  Then, for any $n \geq d$,
+\[
+s_n(\mathcal{A}) \leq (n + 1)^d
+\]
+
+\smallCapGreen{Punchline:} For small $n$, the shattering coefficient increases exponentially.
+For large $n$, the shattering coefficient increases polynomially 
+
+\vsp
+If $n$ is large enough and $d < \infty$ then 
+\begin{align*}
+\P(\sup_{A \in \mathcal{A}} |\hat{\P}(A) - \P(A)| > \epsilon) 
+& \leq 
+8 s_n(\mathcal{A}) e^{-n\epsilon^2/32} \\
+& \leq 
+8(1+n)^d e^{-n\epsilon^2/32} \\
+\end{align*}
+\script{We'll leave this topic for now.  We return weak learners/boosting and address VC dimension again
+soon.}
+\end{frame}
+
+\transitionSlide{Boosting (again)}
+
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+Suppose a learning algorithm cannot attain an error rate below a fixed amount (say 40\%)
+
+\vsp
+Can we still drive the error rate arbitrary close to zero?
+
+\vsp
+Boosting considers this problem, augmenting classifiers that are only marginally better 
+than random guessing
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+A concept class $\mathcal{C}$ is \alg{weakly learnable} (with $\mathcal{H}$) provided there exists an algorithm $A$
+and $\gamma > 0$ such that 
+for all $\{c \in \mathcal{C}, \P \textrm{ on } \mathcal{X}, \delta \leq 1\}$, there exists an $h \in \mathcal{H}$ produced
+by $A$ on $n$ examples where
+\[
+\P^n (\textrm{err} \leq 1/2 - \gamma) \geq \delta
+\]
+\script{Again, only polynomial growth of $n$ is allowed}
+
+\smallCapGreen{Note:} This means that there is an algorithm that, with high probability can do slightly better than 
+random guessing
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example:} Let $\mathcal{X} = \{0,1\}^n \cup \{Z\}$, $\mathcal{C}$ be all functions on $\mathcal{X}$,
+and $\P(\{Z\}) = 1/4$, uniform on all other elements.  Given a set of examples, the algorithm will quickly learn
+$c(Z)$, as $Z$ is very likely.
+
+\vsp
+However, as we are only viewing polynomial number of examples from $|\mathcal{X}| \geq 2^n$, the algorithm
+will do not much better than random guessing.  Then
+\[
+\textrm{expected error} \approx \frac{1}{4}(0) + \frac{3}{4}\cdot \frac{1}{2} = \frac{3}{8}
+\]
+\vsp
+So, there exists situations that are only weakly learnable. Is this the end of the story...?
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{Schapire (1990)}
+This paper answered the question: is there a gap between strong and weak learnability?
+
+\vsp
+The answer is really no
+
+\vsp
+A concept class $\mathcal{C}$ is weakly learnable if and only if it is strongly learnable\footnote{The 
+wrinkle is that we are allowed to resample from altered versions of the training set and change the
+hypothesis class $\mathcal{H}$}
+
+\vsp
+The cool part is that the proof is constructive and produces the first \alo{boosting} algorithm
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Overall boosting philosophy}
+\smallCapGreen{Given:}
+\begin{enumerate}
+\item  $n$ examples from some fixed, unknown $\P$
+\item a weak learning algorithm $A$ producing $h \in \mathcal{H}$
+\end{enumerate}
+\vsp
+
+\smallCapGreen{Produce:} a new hypothesis $H \in \mathcal{H}_{new}$ with error $\leq \epsilon$
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Schapire (1990)}
+The first boosting algorithm for a weak learning algorithm $A$
+\begin{enumerate}
+\item  A hypothesis $h_1$ is formed on $n$ instances
+\item A hypothesis $h_2$ is formed on $n$ instances, half of which are misclassified by $h_1$
+
+\script{More specifically, a fair coin is flipped.  If the result is \alo{heads} then $A$ draws samples
+$x \sim \P$ until $h_1(x) = c(x)$.  If the result is \alo{tails} then we wait until $h_1(x) \neq c(x)$}
+\item A hypothesis $h_3$ is formed on $n$ instances, for which $h_1$ and $h_2$ disagree
+\item the boosted hypothesis $h_b$ is the majority vote of $h_1,h_2,h_3$
+\end{enumerate}
+\vsp
+
+Schapire's ``strength of weak learnability'' theorem shows that $h_b$ has improved performance over $h_1$.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Schapire (1990)}
+Of course, if this rejection sampling is occurring over small probability regions of $\P$, then we may wait a long
+time (i.e.: not polynomially)
+
+\vsp
+However, in the same paper they 
+\begin{enumerate}
+\item bound the expected running time
+\item use the $\delta$ parameter to bound with high probability the actual running time
+\end{enumerate}
+\script{details omitted}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Freund (1995)}
+This paper augmented the results to show that we can combine many weak learners simultaneously
+
+\vsp
+This improves the results of the simple boosting proposed by Schapire (1990)
+
+\vsp
+The bottom line is that we can grow the number of comparisons sub-polynomially and still get polynomial complexity
+in the number of instances
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Weakness of both papers}
+Each paper and associated theory required the weak learner to produce a classifier with
+a fixed error rate; that is $\gamma$
+
+\vsp
+This led to a more realistic version, now known as \alg{AdaBoost}
+
+\vsp
+\alg{AdaBoost} is more adaptive and realistic by dropping this assumption
+\end{frame}
+
+\transitionSlide{AdaBoost}
+
+\begin{frame}[fragile]
+\frametitle{Motivation}
+\alo{Reminder:}
+We are attempting to make a classifier $\hat{g}$ such that
+\[
+R(\hat{g}) = \P(\hat{g}(X) \neq Y | \data) \approx \inf_{g} R(g) = \P(\min\{\eta(X),1-\eta(X)\}) 
+\]
+\script{The \alo{Bayes' risk}}
+
+where $\eta(x)  = \P(Y = 1 | X=x)$
+
+\vsp
+The infimum is achieved by $g^*(x) = g(2\eta(x) - 1)$, where
+\[
+g(x) 
+= 
+\begin{cases}
+1 & \textrm{ if } x > 0 \\
+-1 & \textrm{ if } x \leq 0 \\
+\end{cases}
+\]
+\alg{Boosting} seeks to generate a \alo{linear combination} of base classifiers
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{Motivation}
+%\smallCapGreen{Motivation:} 
+Create a committee of classifiers that combines many \alg{weak} classifiers 
+
+\vsp
+Letting
+\[
+\hat{R}(g) = \frac{1}{n} \sum_{i=1}^n \mathbf{1}_{Y_i \neq g(x)}(X_i)
+\]
+with prediction risk
+\[
+R(g) = \E_{Z} \mathbf{1}(Y \neq g(X))
+\]
+
+A weak classifier is a $g$ such that $R(g)$ is only slightly better than \alo{random guessing}
+
+\script{These are the weak learners}
+\end{frame}
+
+%page 410, 361,353(),341
+\begin{frame}[fragile]
+\frametitle{Boosting framework}
+\smallCapGreen{Goal:} Produce a sequence of (weak) classifiers $g_1,\ldots,g_M$  on repeatedly modified data
+
+\vsp
+The final classifier is:
+\[
+g(x) = \textrm{sgn}\left(\sum_{m=1}^M \beta_m g_m(x)\right)
+\]
+
+\vsp
+The $\beta_m$ are the \alg{boosting weights} to weight the \alo{classifiers}
+
+\vsp
+The modified data occurs by creating \alg{training weights} $w_1,\ldots,w_n$ to weight the \alo{observations}
+
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost outline}
+We give an overview of `AdaBoost.M1.' 
+
+\script{Freund and Shapire (1997)}
+
+\vsp
+First, train the classifier as usual
+
+\script{This is done by setting $w_i \equiv 1/n$}
+
+\vsp
+At each step $m$, the misclassified observations have their weights increased
+
+\script{Implicitly, this lowers the weight on correctly classified observations}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost algorithm}
+\begin{enumerate}
+\item Initialize $w_i \equiv 1/n$
+\item For $m = 1,\ldots,M$
+\begin{enumerate}
+\item Fit $g_m(x)$ on $\data$, weighted by $w_i$
+\item \textcolor<2>{red}{Compute
+\[
+R_m = \frac{\sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g_m(X_i))}{\sum_{i=1}^n w_i}
+\]
+}
+\item Find $\beta_m = \log((1-R_m)/R_m)$
+\item Set $w_i \leftarrow w_i\exp\{\beta_m \mathbf{1}(Y_i \neq g_m(X_i))\}$
+\end{enumerate}
+\item \smallCapGreen{Output:} $g(x) = \textrm{sgn}\left(\sum_{m=1}^M \beta_m g_m(x)\right)$
+\end{enumerate}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+\smallCapGreen{Question:} Why does this work?
+
+\vsp
+\smallCapGreen{One answer:} Boosting fits an additive model
+
+\[
+f(x) = \sum_{m=1}^M \beta_m \phi_m(x)
+\]
+\script{It took about 5 years for this realization to appear in the literature}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+Often, $\phi_m(x) = \phi(x;\theta_m)$
+
+\vsp
+
+We'd like to find
+\[
+\min_{(\beta_m),(\theta_m)} \hat\P \ell_{(\beta_m),(\theta_m)}
+\]
+
+\vsp
+For most loss function $(\ell)$ and basis function $\phi$ combinations, this is a computationally intensive
+optimization
+
+\vsp
+This speaks to needing a numerical \alo{approximation}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+In analogy to forward stepwise regression, we can do the minimization in a \alo{greedy} fashion 
+
+\script{Remember: greedy means that at each step we don't revist the fit from any previous step}
+
+\vsp
+This is done by sequential minimization: For $m =1 ,\ldots,M$
+\[
+(\beta_m,\theta_m) = \argmin_{\beta,\theta} \sum_{i=1}^n \ell(Y_i,f_{m-1}(X_i) + \beta b(X_i,\theta))
+\]
+
+\script{For squared error loss, this reduces to finding the best single term basis expansion of the residuals.  This
+gives birth to the idea of \alo{least squares boosting}.}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+However, squared error loss isn't right for classification
+
+\vsp
+AdaBoost implicitly uses the \alo{loss function}
+\[
+\ell(Y,f(X)) = \exp\{-Yf(X)\}
+\]
+and basis functions $g_m$
+
+\vsp
+Doing the forward selection for this loss, we get
+
+\begin{align*}
+(\beta_m,g_m) 
+& = \argmin_{\beta,g} \sum_{i=1}^n \exp\{-Y_i(f_{m-1}(X_i) + \beta g(X_i))\}\\
+\end{align*}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+Rewriting:
+\begin{align*}
+(\beta_m,g_m) 
+& = \argmin_{\beta,g} \sum_{i=1}^n \exp\{-Y_i(f_{m-1}(X_i) + \beta g(X_i))\}\\
+& = \argmin_{\beta,g} \sum_{i=1}^n  \alr{\exp\{-Y_if_{m-1}(X_i)\}}\alb{\exp\{-Y_i\beta g(X_i))\} }\\
+& = \argmin_{\beta,g} \sum_{i=1}^n \alr{w_i} \alb{\exp\{-Y_i\beta g(X_i)\}}
+\end{align*}
+Where
+\begin{itemize}
+\item Define $\alr{w_i = \exp\{-Y_if_{m-1}(X_i)\}}$ 
+
+\script{This is independent of $\beta,g$}
+\item  $\sum_{i=1}^n\alr{w_i}\alb{\exp\{ -Y_i\beta g_m(X_i))\}}$ needs to be optimized
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+Note that
+\begin{align*}
+\sum_{i=1}^n\alr{w_i}\alb{\exp\{ -\beta Y_ig_m(X_i))\}}
+& =
+e^{-\beta}\sum_{i:Y_i = g(X_i)} w_i + e^{\beta}\sum_{i:Y_i \neq g(X_i)} w_i \\
+& =
+(e^{\beta} - e^{-\beta}) \sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g(X_i))+ \\
+&\qquad + e^{-\beta} \sum_{i=1}^n w_i
+\end{align*}
+
+\vsp
+Hence, we can find
+\[
+g_m = \argmin_g \sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g(X_i))
+\]
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost algorithm}
+\begin{enumerate}
+\item Initialize $w_i \equiv 1/n$
+\item For $m = 1,\ldots,M$
+\begin{enumerate}
+\item Fit $g_m(x)$ on $\data$, weighted by $w_i$
+\item Compute
+\[
+R_m = \frac{\sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g_m(X_i))}{\sum_{i=1}^n w_i}
+\]
+\item Find $\beta_m = \log((1-R_m)/R_m)$
+\item Set $w_i \leftarrow w_i\exp\{\beta_m \mathbf{1}(Y_i \neq g_m(X_i))\}$
+\end{enumerate}
+\item \smallCapGreen{Output:} $g(x) = \textrm{sgn}\left(\sum_{m=1}^M \beta_m g_m(x)\right)$
+\end{enumerate}
+\end{frame}
+
+
+\end{document}

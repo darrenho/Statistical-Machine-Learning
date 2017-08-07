@@ -1,0 +1,1295 @@
+\documentclass{beamer}
+%\usepackage[usenames,dvipsnames]{xcolor}
+
+\usepackage{_defsAndPackages675notation}
+\usepackage{_defsAndPackages675beamer}
+
+\begin{document}
+
+\title{\alg{Clustering}}
+\subtitle{\classTitle}
+%\author{\alg{Darren Homrighausen, PhD}}
+%\institute{\classTitle}
+\date{}
+
+
+
+\begin{frame}
+\maketitle
+%\titlepage
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=1in]{.../../figures/CSU_logo2.eps}
+%\end{figure}
+%
+\organization
+%
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{K-means}
+\begin{enumerate}
+\item Select a number of clusters $K$.
+\item Let $C_1,\ldots,C_K$ partition $\{1,2,3,\ldots,n\}$ such that
+	\begin{itemize}
+		\item All observations belong to some set $C_j$.
+		\item No observation belongs to more than one set.
+	\end{itemize}
+\item K-means attempts to form these sets by making \alo{within-cluster variation}, $W(C_k)$, as small as possible.
+\[
+\min_{C_1,\ldots,C_K} \sum_{k=1}^K W(C_k).
+\]
+\item To Define $W$, we need a concept of distance.  By far the most common is Euclidean
+\[
+W(C_k) =  \frac{1}{|C_k|} \sum_{i,i' \in C_k} ||X_i - X_{i'}||_2^2.
+\]
+That is, the average (Euclidean) distance between all cluster members.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{K-means}
+It turns out
+\begin{equation}
+\min_{C_1,\ldots,C_K} \sum_{k=1}^K W(C_k).
+\end{equation}
+is too hard of a problem to solve computationally ($K^n$ partitions!).
+
+\vsp
+So, we make a greedy approximation:
+\begin{enumerate}
+\item Randomly assign observations to the $K$ clusters
+\item Iterate until the cluster assignments stop changing:
+\begin{itemize}
+\item For each of $K$ clusters, compute the \alg{centroid}, which is the $p$-length vector of the means in that
+cluster.
+\item Assign each observation to the cluster whose centroid is closest (in Euclidean distance).
+\end{itemize}
+\end{enumerate}
+This procedure is guaranteed to decrease (1) at each step. 
+\vsp
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{K-means: A Summary}
+To fit K-means, you need to 
+\begin{enumerate}
+\item Pick $K$ (inherent in the method)
+\item Convince yourself you have found a good solution (due to the randomized approach to the algorithm).
+\end{enumerate}
+\vsp
+
+It turns out that \alb{1.} is difficult to do in a principled way.  We will discuss this next
+\vsp
+
+For \alb{2.}, a commonly used approach is to run K-means many times with different starting points.  Pick the
+solution that has the smallest value for 
+\[
+\min_{C_1,\ldots,C_K} \sum_{k=1}^K W(C_k)
+\]
+\end{frame}
+
+\transitionSlide{Choosing $K$}
+
+\begin{frame}[fragile]
+\frametitle{Choosing the Number of Clusters}
+Why is it important?
+\begin{itemize}
+\item It might make a big difference (concluding there are $K = 2$ cancer sub-types versus
+$K = 3$).
+\item One of the major goals of statistical learning is automatic inference.  A good way of
+choosing $K$ is certainly a part of this.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Reminder: What does $K$-means do?}
+Given a number of clusters $K$, we (approximately) minimize:
+\[
+\sum_{k=1}^K W(C_k) 
+%= \sum_{k=1}^K \frac{1}{|C_k|} \sum_{i,i' \in C_k} \sum_{j=1}^p (x_{ij} - x_{i'j})^2 
+= \sum_{k=1}^K\frac{1}{|C_k|} \sum_{i,i' \in C_k} ||X_i - X_{i'}||_2^2.
+\]
+We can rewrite this in terms of the \alo{centroids} as
+\[
+W(K) = \sum_{k=1}^K  \sum_{i \in C_k}  ||X_i - \overline{X}_k||_2^2,
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Minimizing $W$ in $K$}
+Of course, a lower value of $W$ is better.  Why not minimize $W$?
+\begin{blockcode}
+plotW = rep(0,49)
+for(K in 1:49){
+  plotW[K] = 	kmeans(x,centers=K,nstart=20)$tot.withinss
+}
+\end{blockcode}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.5in,trim=0 0 0 50,clip]{../figures/clusteringKmeansMinimizeW.pdf}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Minimizing $W$ in $K$}
+Of course, a lower value of $W$ is better.  Why not minimize $W$?
+
+\vsp
+A look at the cluster solution
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.8in,trim=0 0 0 0,clip]{../figures/clusteringKmeansMinimizeW2.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Between-cluster variation}
+Within-cluster variation measures how \alo{tightly grouped} the clusters are.  As 
+we increase $K$, this will always decrease.  
+\vsp
+
+What we are missing is \alo{between-cluster variation}, ie: how spread apart the groups are
+\[
+B = \sum_{k=1}^K |C_k| ||\overline{X}_k - \overline{X} ||_2^2,
+\]
+where $|C_k|$ is the number of points in $C_k$, and $\overline{X}$ is the grand mean
+of all observations:
+\[
+\overline{X} = \frac{1}{n} \sum_{i=1}^n X_i.
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Between-cluster variation: Example}
+\begin{figure}[h!]
+  \centering
+\includegraphics[width=2.5in,trim=0 0 0 0,clip]{../figures/clusteringKmeansBetweenSSexample.pdf}
+\end{figure}
+\begin{itemize}
+\item[] B = \textcolor{green!65!black}{$|C_1| ||\overline{X}_1 - \overline{X} ||_2^2$} +
+\textcolor{red}{$|C_2| ||\overline{X}_2 - \overline{X} ||_2^2$}
+\item[] W = \textcolor{green!65!black}{$\sum_{i \in C_1} |C_1| ||\overline{X}_1 - X_i ||_2^2$} +
+\textcolor{red}{$\sum_{i \in C_2} |C_2| ||\overline{X}_2 - X_i ||_2^2$}
+\end{itemize}
+\end{frame}
+
+
+%\begin{frame}[fragile]
+%\frametitle{R tip detour}
+%\begin{figure}[h!]
+%  \centering
+%\includegraphics[width=1.1in,trim=0 40 0 55,clip]{../figures/clusteringKmeansBetweenSSexample.pdf}
+%\end{figure}
+%\begin{blockcode}
+%x1Bar = apply(x[1:25,],2,mean)
+%x2Bar = apply(x[26:50,],2,mean)
+%xBar  = apply(x,2,mean)
+%
+%plot(x,xlab='x1',ylab='x2',col=kmeans(x,centers=2,nstart=20)$cluster+1)
+%points(x1Bar[1],x1Bar[2])
+%points(x2Bar[1],x2Bar[2])
+%points(xBar[1],xBar[2])
+%segments(x1Bar[1],x1Bar[2],x2Bar[1],x2Bar[2],col='blue')
+%text(x1Bar[1]+.15,x1Bar[2]+.15,expression(bar(X)[1]))
+%text(x2Bar[1]+.15,x2Bar[2]+.15,expression(bar(X)[2]))
+%text(xBar[1]+.15,xBar[2]+.15,expression(bar(X)))
+%\end{blockcode}
+%\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Can we just maximize $B$?}
+Sadly, no.  Just like $W$ can be made arbitrarily small, $B$ will always be increasing
+with increasing $K$.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.5in,trim=0 0 0 0,clip]{../figures/clusteringKmeansMaximizeB.pdf}  
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{$CH$ index}
+Ideally, we would like our cluster assignment to \alo{simultaneously} have small $W$ and large $B$.
+\vsp
+
+This is the idea behind \alo{$CH$ index}.  For clustering assignments coming from $K$
+clusters, we record $CH$ score:
+\[
+CH(K) = \frac{B(K)/(K-1)}{W(K)/(n-k)} 
+\]
+To choose $K$, pick some maximum number of clusters to be considered ($K_{\max} = 20$,
+for example)  and choose the value of $K$ that
+\[
+\hat K = \argmax_{K \in \{ 2,\ldots, K_{\max} \}} CH(K).
+\]
+
+\textcolor{red}{Note:} $CH$ is undefined for $K =1$.
+
+\vsp
+\script{Calinski, Harabasz (1974)}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{$CH$ index}
+\begin{blockcode}
+ch.index = function(x,kmax,iter.max=100,nstart=10,
+                      algorithm="Lloyd")
+{
+  ch = numeric(length=kmax-1)
+  n = nrow(x)
+  for (k in 2:kmax) {
+    a = kmeans(x,k,iter.max=iter.max,nstart=nstart,
+              algorithm=algorithm)
+    w = a$tot.withinss
+    b = a$betweenss
+   ch[k-1] = (b/(k-1))/(w/(n-k))
+  }
+  return(list(k=2:kmax,ch=ch))
+}
+\end{blockcode}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{A simulated example}
+\begin{blockcode}
+x = matrix(rnorm(50*2),ncol=2)
+x[1:25,1] = x[1:25,1] + 3
+x[1:25,2] = x[1:25,2] -4
+\end{blockcode}
+\vsp
+
+We want to cluster this data set using K-means with $K$ chosen via $CH$ index.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{$CH$ plot}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=3in,trim=0 0 0 0,clip]{../figures/clusteringKmeansCH.pdf}  
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Corresponding solution}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=3in,trim=0 0 0 0,clip]{../figures/clusteringKmeansCHoutcome.pdf}  
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Alternate approach: Gap statistic}
+While true that $W(K)$ keeps dropping in $K$, \alo{how much it drops} might be informative.
+
+\vsp
+The \alo{gap statistic} is based on this idea.  We compare the observed within-cluster variation
+$W(K)$ to the within-cluster variation we would observe if the data were uniformly distributed $W_{unif}(K)$.
+
+\[
+Gap(K) = \log W(K) - \log W_{unif}(K)
+\]
+After simulating many $\log W_{unif}(K)$, we compute its standard deviation $s(K)$.  Then, we choose
+$K$ by
+\[
+\hat K = \min\{ K \in \{1,\ldots,K_{\max} \} : Gap(K) \geq Gap(K+1) - s(K+1) \}.
+\]
+\script{Tibshirani et al. (2001)}
+\end{frame}
+
+\transitionSlide{Hierarchical clustering}
+\begin{frame}
+\frametitle{From $K$-means to hierarchical clustering}
+Recall two properties of \alg{$K$-means} clustering
+\begin{enumerate}
+\item It fits exactly $K$ clusters.
+\item Final clustering assignments depend on the chosen initial cluster centers.
+\end{enumerate}
+\vsp
+
+Alternatively, we can use \alg{hierarchical clustering}.  This has the advantage that
+\begin{enumerate}
+\item No need to choose the number of clusters before hand.
+\item There is no random component (nor choice of starting point).
+\end{enumerate}
+\end{frame}
+\begin{frame}
+\frametitle{From $K$-means to hierarchical clustering}
+
+There is a catch: we need to choose a way to measure dissimilarity between clusters, called the \alg{linkage}.
+
+\vsp
+Given the linkage, hierarchical clustering produces a sequence of clustering assignments.  
+
+\vsp
+At one end, all points are in their \alo{own} cluster.  
+
+\vsp
+At the other, all points are in \alo{one} cluster.  
+
+\vsp
+In the middle, there are \alo{nontrivial} solutions.
+\end{frame}
+
+%
+%\begin{frame}
+%\frametitle{Agglomerative vs. divisive}
+%Two types of hierarchical clustering algorithms
+%\vsp
+%\begin{table}
+%\begin{tabular}{ll}
+%\smallCapGreen{Agglomerative:} & Start with each point in its own cluster. \\
+%                                                             & Merge until all in same cluster.\\
+%(ie: top-down)                                    & (think of forward selection) \\
+%\hline
+%\smallCapGreen{Divisive:}             & Until every point is assigned to its own \\
+%(ie: bottom-up)                                  & cluster, repeatedly split the group into two \\
+%                                                             & parts that result in the biggest dissimilarity \\
+%                                                             & (think of backwards selection).
+%\end{tabular}
+%\end{table}
+%Agglomerative methods are simpler, so we'll focus on them.  You'll have to read about
+%divisive methods on your own.
+%\end{frame}
+
+\begin{frame}
+\frametitle{Agglomerative example}
+Given these data points, an agglomerative algorithm \alo{might} decide on the following clustering sequence:
+
+\script{\smallCapGreen{Important:} Different choices of linkage would result in different solutions}
+\begin{columns}[T]
+\begin{column}{.48\textwidth}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.3in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExample.pdf}
+\end{figure}
+\end{column}
+\begin{column}{.55\textwidth}
+\vsp
+\begin{enumerate}
+\item $\{1\}, \{2\}, \{3\}, \{4\}, \{5\}, \{6\}, \{7\}$
+\item $\{1,2\}, \{3\}, \{4\}, \{5\}, \{6\}, \{7\}$
+\item $\{1,2\}, \{3\}, \{5\}, \{4,7\}$
+\item $\{1,2,6\}, \{3\}, \{5\}, \{4,7\}$
+\item $\{1,2,4,6,7\}, \{3\}, \{5\}$
+\item $\{1,2,3,4,6,7\},  \{5\}$
+\item $\{1,2,3,4,5,6,7\}$
+\end{enumerate}
+\end{column}
+\end{columns}
+\end{frame}
+%
+%\begin{frame}
+%\frametitle{Reminder: What's a dendrogram?}
+%We encountered dendrograms when we talked about classification and regression trees.
+%\vsp
+%
+%\alg{Dendrogram:} A convenient graphic to display a hierarchical sequence of clustering
+%assignments.  This is simply a tree where:
+%\begin{itemize}
+%\item Each branch represents a group 
+%\item Each leaf (terminal) node is a singleton 
+%
+%\script{ie: a group containing a single data point}
+%\item The root node is a group containing the whole data set
+%\item Each internal node as two daughter nodes (children), representing the groups that were merged to form it.
+%\end{itemize}
+%
+%\vsp
+%Remember: the choice of \alo{linkage} determines how we measure dissimiliarity between groups.
+%
+%\vsp
+%Each internal node is drawn at a height proportional to the dissimiliarity between its two daughter nodes.
+%\end{frame}
+
+\begin{frame}
+%\frametitle{Agglomerative example}
+We can also represent the sequence of clustering assignments as a \alo{dendrogram}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.3in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExample.pdf}
+  \includegraphics[width=2.3in,trim=0 40 0 55,clip]{../figures/clusteringHierAgglomExampleDend.pdf}  
+\end{figure}
+Note that cutting the dendrogram horizontally partitions the data points into clusters
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Back to the example}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.3in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExample.pdf}
+  \includegraphics[width=2.3in,trim=0 40 0 55,clip]{../figures/clusteringHierAgglomExampleDend.pdf}  
+\end{figure}
+For instance, the dissimilarity between the cluster $\{4,7\}$ and the cluster $\{1,2,6\}$ is about .65.
+\end{frame}
+
+\begin{frame}
+\frametitle{Linkages}
+Notation: Define $X_1,\ldots, X_n$ to be the data
+
+\vsp
+Let the \alg{dissimiliarities} be $d_{ij}$ between each pair $X_i, X_j$
+
+\vsp
+At any level, clustering assignments can be expressed by sets $G = \{ i_1, i_2, \ldots, i_r\}$. given the \alo{indices}
+of points in this group.  Define $|G|$ to be the size of $G$.  
+
+\vsp
+\alg{Linkage:}  The function $d(G,H)$ that takes two groups $G,H$ and returns the dissimilarity score between them.
+
+\vsp 
+Agglomerative clustering, given the linkage:
+\begin{itemize}
+\item Start with each point in its own group
+\item Until there is only one cluster, repeatedly merge the two groups $G,H$ that minimize $d(G,H)$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Single linkage}
+In \alg{single linkage} (a.k.a nearest-neighbor linkage), the dissimiliarity between $G,H$ is the smallest dissimilarity 
+between two points in different groups:
+\[
+d_{\textrm{single}}(G,H) = \min_{i \in G, \, j \in H} d_{ij}
+\]
+\begin{columns}[T]
+\begin{column}{.52\textwidth}
+\vsp
+
+\smallCapGreen{Example:} There are two clusters $G$ and $H$ (\alr{red} and \alb{blue}).  \\ The single linkage
+score 
+
+\script{i.e. \alo{$d_{\textrm{single}}(G,H)$}} 
+
+is the dissimilarity between the closest pair 
+
+\script{length of black line segment}
+\end{column}
+\begin{column}{.48\textwidth}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.3in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleSingle.pdf}
+\end{figure}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Single linkage example}
+Here $n = 60$, $X_i \in \mathbb{R}^2$, $d_{ij} = || X_i - X_j||_2$.  Cutting the tree at $h = 0.8$ gives the cluster
+assignments marked by colors
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.1in,trim=0 30 0 55,clip]{../figures/clusteringHierAgglomExampleSingleSimDend.pdf}
+  \includegraphics[width=2.1in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleSingleSimScatter.pdf}  
+\end{figure}
+\alo{Cut interpretation:} For each point $X_i$, there is another point $X_j$ in the same cluster with $d_{ij} \leq 0.8$
+(assuming more than 1 point in cluster).  Also, no points in different clusters are closer than 0.8.
+\end{frame}
+
+\begin{frame}
+\frametitle{Complete linkage}
+In \alg{complete linkage} (i.e. farthest-neighbor linkage), dissimiliarty between $G,H$ is the \alo{largest} 
+dissimilarity between two points in different clusters:
+\[
+d_{\textrm{complete}}(G,H) = \max_{i \in G,\, j \in H} d_{ij}.
+\]
+\begin{columns}[T]
+\begin{column}{.52\textwidth}
+\vsp
+
+%Example: There are two clusters (red and blue).  The complete linkage
+%score ($d_{\textrm{complete}}(G,H)$) is the distance between the \alo{farthest} pair (black line segment).
+
+\smallCapGreen{Example:} There are two clusters $G$ and $H$ (\alr{red} and \alb{blue}).  \\ The complete linkage
+score 
+
+\script{i.e. \alo{$d_{\textrm{complete}}(G,H)$}} 
+
+is the dissimilarity between the \alo{farthest} pair 
+
+\script{length of black line segment}
+\end{column}
+\begin{column}{.48\textwidth}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.3in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleComplete.pdf}
+\end{figure}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Complete linkage example}
+Same data as before.  Cutting the tree at $h= 3.5$ gives the clustering assignment
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.1in,trim=0 30 0 55,clip]{../figures/clusteringHierAgglomExampleCompleteSimDend.pdf}
+  \includegraphics[width=2.1in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleCompleteSimScatter.pdf}  
+\end{figure}
+\alo{Cut interpretation:} For each point $X_i$, every other point $X_j$ in the same cluster has $d_{ij} \leq 3.5$.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Average linkage}
+In \alg{average linkage}, the dissimiliarty between $G,H$ is the \alo{average} 
+dissimilarity over all points in different clusters:
+\[
+d_{\textrm{average}}(G,H) = \frac{1}{|G| \cdot |H| }\sum_{i \in G, \,j \in H} d_{ij}.
+\]
+\begin{columns}[T]
+\begin{column}{.52\textwidth}
+\vsp
+
+%Example: There are two clusters (red and blue).  The average linkage
+%score ($d_{\textrm{average}}(G,H)$) is the average distance between all the points in different clusters.
+
+\smallCapGreen{Example:} There are two clusters $G$ and $H$ (\alr{red} and \alb{blue}).  \\ The average linkage
+score 
+
+\script{i.e. \alo{$d_{\textrm{average}}(G,H)$}} 
+
+is the average dissimilarity between \alo{all} points in different clusters
+
+\script{average of lengths of colored line segments}
+
+\end{column}
+\begin{column}{.48\textwidth}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.3in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleAverage.pdf}
+\end{figure}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Average linkage example}
+Same data as before.  Cutting the tree at $h= 1.75$ gives the clustering assignment
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.1in,trim=0 30 0 55,clip]{../figures/clusteringHierAgglomExampleAverageSimDend.pdf}
+  \includegraphics[width=2.1in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleAverageSimScatter.pdf}  
+\end{figure}
+\alo{Cut interpretation:} ??
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Common properties}
+Single, complete, and average linkage share the following:
+\begin{itemize}
+\item They all operate on the dissimilarities $d_{ij}$.  This means that the points we are clustering can be
+quite general (number of mutations on a genome, polygons, faces, whatever).
+\item Running agglomerative clustering with any of these linkages produces a dendrogram with no \alo{inversions}.
+\end{itemize}
+\vsp
+
+No inversions means that the dissimilarity scores between merged clusters only \alo{increases} as we run
+the algorithm.
+
+\vsp
+In other words, we can draw a proper dendrogram, where the height of a parent is always higher than the height
+of either daughter.
+
+\script{We'll return to this again shortly}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Shortcomings of single and complete linkage}
+Single and complete linkage have practical problems:
+\begin{table}
+\begin{tabular}{ll}
+\smallCapGreen{Single linkage:} & Often suffers from \alo{chaining}, that is, \\
+& we only need a single pair of  \\
+& points to be close to merge two clusters. \\
+ & Therefore, clusters can be too spread out  \\
+&  and not compact enough. \\
+\smallCapGreen{Complete linkage:} & Often suffers from \alo{crowding}, that is, \\
+& a point can be closer to points in \\
+& other clusters than to points in its own  \\
+& cluster.  Therefore, the clusters are \\ 
+& compact, but not far enough apart.
+\end{tabular}
+\end{table}
+Average linkage tries to strike a balance between these two.
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Example of chaining and crowding}
+\begin{table}
+\begin{tabular}{cc}
+  \includegraphics[width=1.6in,trim=0 10 0 55,clip]{../figures/clusteringHierAgglomExampleSingleSimScatter.pdf}  &
+  \includegraphics[width=1.6in,trim=0 10 0 55,clip]{../figures/clusteringHierAgglomExampleCompleteSimScatter.pdf}   \\
+  Single linkage & Complete linkage \\
+  \includegraphics[width=1.6in,trim=0 10 0 55,clip]{../figures/clusteringHierAgglomExampleAverageSimScatter.pdf}   & \\
+  Average linkage 
+\end{tabular}
+\end{table}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Shortcomings of average linkage}
+Average linkage isn't perfect.
+\begin{itemize}
+\item It isn't clear what properties the resulting clusters have when we cut an average linkage tree.
+\item Results of average linkage clustering can change with a monotone increasing transformation of the
+dissimilarities (that is, if we changed the distance, but maintained the ranking of the distances, the cluster
+solution could change).
+\end{itemize}
+Neither of these problems afflict single or complete linkage.
+\end{frame}
+
+\begin{frame}
+\frametitle{Example of monotone increasing problem}
+\begin{table}[h!]
+  \centering
+\begin{tabular}{ccc}
+\parbox[c][.5cm]{1.5cm}{\alo{Average} \vvvsp \vvvsp \vvvsp \vvvsp} 
+&  
+\includegraphics[width=1.55in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleAverageSimScatterUnSq.pdf}   
+&
+\includegraphics[width=1.55in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleAverageSimScatterSq.pdf}     
+\\ 
+\parbox[c][.5cm]{1.5cm}{\alo{Single} \vvvsp \vvvsp \vvvsp \vvvsp} 
+&  
+\includegraphics[width=1.55in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleSingleSimScatterUnSq.pdf}   
+&
+\includegraphics[width=1.55in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleSingleSimScatterSq.pdf}        
+\\
+& Left: $d_{ij} = ||X_i - X_j||_2$ &  Right: $d_{ij} = ||X_i - X_j||_2^2$ 
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hierarchical agglomerative clustering in \alr{R}}
+The function {\tt hclust} in base \alr{R} performs the necessary computations.  E.g.
+\begin{blockcode}
+Delta = dist(x)
+out.average = hclust(Delta,method='average')
+plot(out.average)
+\end{blockcode}
+\end{frame}
+
+\begin{frame}
+\frametitle{Recap}
+\smallCapGreen{Hierarchical agglomerative clustering: } Start with all data points in
+their own groups, and repeatedly merge groups, based on linkage
+function. Stop when points are in one group (this is agglomerative;
+there is also divisive)
+\vsp
+
+This produces a sequence of clustering assignments, visualized by a
+dendrogram (i.e., a tree). Each node in the tree represents a group,
+and its height is proportional to the dissimilarity of its daughters
+
+\vsp
+Three most common linkage functions: \alo{single}, \alo{complete}, \alo{average}
+linkage. Single linkage measures the least dissimilar pair between
+groups, complete linkage measures the most dissimilar pair,
+average linkage measures the average dissimilarity over all pairs
+\vsp
+
+Each linkage has its strengths and weaknesses
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Careful Example}
+\begin{columns}[T]
+\begin{column}{.65\textwidth}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=3.2in,trim=0 0 0 0,clip]{../figures/clusteringHierLinkageStepByStep.pdf}
+\end{figure}
+\end{column}
+\begin{column}{.35\textwidth}
+\vsp
+\vsp
+
+Distance matrix ($\Delta$)
+%\begin{blockcode}
+\tiny
+\begin{alltt}
+     1    2    3    4    5    6    7
+1 0.00 0.37 0.49 0.61 0.96 1.24 1.42
+2 0.37 0.00 \textcolor{red}{0.12} 0.64 0.98 1.44 1.24
+3 0.49 \textcolor{red}{0.12} 0.00 0.65 0.97 1.48 1.15
+4 0.61 0.64 0.65 0.00 \textcolor{blue}{0.36} 0.85 0.90
+5 0.96 0.98 0.97 \textcolor{blue}{0.36} 0.00 0.71 0.72
+6 1.24 1.44 1.48 0.85 0.71 0.00 1.39
+7 1.42 1.24 1.15 0.90 0.72 1.39 0.00
+\end{alltt}
+%\end{blockcode}
+
+\begin{table}
+\begin{tabular}{ll}
+\multicolumn{2}{l}{(All Merging $\{1\}$ and $\{2,3\}$)} \\
+\smallCapGreen{Single}: & 0.37 \\
+\smallCapGreen{Complete}: & 0.49 \\
+\smallCapGreen{Average}: & (0.37 + 0.49)/2 = 0.43
+\end{tabular}
+\end{table}
+
+
+\begin{table}
+\begin{tabular}{ll}
+\multicolumn{2}{l}{(Next Agglomeration)} \\
+\smallCapGreen{Single}: & Merging $\{4,5\}$ \& $\{1,2,3\}$ \\
+                                              & 0.61 \\
+\smallCapGreen{Complete}: & Merging $\{4,5\}$ \& $\{6\}$ \\
+                                              & 0.85 \\
+\smallCapGreen{Average}: & Merging $\{4,5\}$ \& $\{6\}$ \\
+                                              & (0.85+0.71)/2 = 0.78
+\end{tabular}
+\end{table}
+
+
+\end{column}
+\end{columns}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Another linkage}
+\alo{Centroid linkage} is a commonly used and relatively new approach.  
+Assume 
+\begin{itemize}
+\item $X_i \in \mathbb{R}^p$
+\item $d_{ij} = ||X_i - X_j||_2$
+\end{itemize}
+\vsp
+
+Let $\overline{X}_G$ and $\overline{X}_H$ denote group averages for $G,H$. Then
+\[
+d_{\textrm{centroid}} = ||\overline{X}_G - \overline{X}_H||_2
+\]
+
+\begin{columns}[T]
+\begin{column}{.48\textwidth}
+\vsp
+\vsp
+Example: There are two clusters (red and blue).  The centroid linkage
+score ($d_{\textrm{centroid}}(G,H)$) is the distance between the centroids (black line segment).
+\end{column}
+\begin{column}{.48\textwidth}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.03in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleCentroid.pdf}
+\end{figure}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Centroid linkage}
+Centroid linkage is
+\begin{itemize}
+\item  ... quite intuitive
+\item ... widely used
+\item ... nicely analogous to $K$-means.
+\item ... very related to average linkage (and much, much faster)
+\end{itemize}
+However, it has a very unsavory feature: \alo{inversions}.
+
+\vsp
+An inversion is when an agglomeration doesn't reduce the linkage distance.
+\end{frame}
+
+\begin{frame}
+\frametitle{Centroid linkage example}
+Same data as before.  We can't look at cutting the tree, but we can still look at a 3 cluster solution.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=2.1in,trim=0 30 0 55,clip]{../figures/clusteringHierAgglomExampleCentroidSimDend.pdf}
+  \includegraphics[width=2.1in,trim=0 0 0 55,clip]{../figures/clusteringHierAgglomExampleCentroidSimScatter.pdf}  
+\end{figure}
+\alo{Cut interpretation:} Even if there are no inversions, there still is no cut interpretation.
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Careful Example: Steps 1,2,3}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=3.2in,trim=0 250 0 0,clip]{../figures/clusteringHierLinkageStepByStepCentroid.pdf}
+\end{figure}
+
+\begin{columns}[T]
+\begin{column}{.45\textwidth}
+Distance matrix ($\Delta$)
+%\begin{blockcode}
+\tiny
+\begin{alltt}
+     1    2    3    4    5    6    7
+1 0.00 0.40 0.35 1.62 1.20 2.16 3.67
+2 0.40 0.00 \textcolor{blue}{0.34} 1.96 0.37 2.54 3.66
+3 0.35 \textcolor{blue}{0.34} 0.00 0.68 0.42 1.05 1.94
+4 1.62 1.96 0.68 0.00 1.45 \textcolor{red}{0.04} 0.46
+5 1.20 0.37 0.42 1.45 0.00 1.86 2.35
+6 2.16 2.54 1.05 \textcolor{red}{0.04} 1.86 0.00 0.27
+7 3.67 3.66 1.94 0.46 2.35 0.27 0.00
+\end{alltt}
+\script{This is squared Euclidean distance}
+\end{column}
+\begin{column}{.55\textwidth}
+\textcolor{red}{Centroid(4,6) $=$ (1.68,0.76)} \\
+\textcolor{blue}{Centroid(2,3) $=$ (0.58,1.25)} \\
+%\textcolor{green}{Centroid distance$^2$: 1.46} \\
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Careful Example: Step 4}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=3.2in,trim=0 250 0 0,clip]{../figures/clusteringHierLinkageStepByStepCentroidPart2.pdf}
+\end{figure}
+
+\begin{columns}[T]
+\begin{column}{.45\textwidth}
+Distance matrix ($\Delta$)
+%\begin{blockcode}
+\tiny
+\begin{alltt}
+     1    2    3    4    5    6    7
+1 0.00 0.40 0.35 1.62 1.20 2.16 3.67
+2 0.40 0.00 \textcolor{blue}{0.34} 1.96 0.37 2.54 3.66
+3 0.35 \textcolor{blue}{0.34} 0.00 0.68 0.42 1.05 1.94
+4 1.62 1.96 0.68 0.00 1.45 0.04 0.46
+5 1.20 0.37 0.42 1.45 0.00 1.86 2.35
+6 2.16 2.54 1.05 0.04 1.86 0.00 0.27
+7 3.67 3.66 1.94 0.46 2.35 0.27 0.00
+\end{alltt}
+\script{This is squared Euclidean distance}
+\end{column}
+\begin{column}{.55\textwidth}
+Which one gets merged?
+\pause
+
+\script{$\{1\}$ and $\{2,3\}$}
+\pause
+\tiny
+\begin{alltt}
+method = 'centroid'
+out = hclust(Delta,method=method)
+rect.hclust(out,k=5,
+            border=c('white','red','white','white','blue'))
+\end{alltt}
+\end{column}
+\end{columns}
+\end{frame}
+
+%\begin{frame}[fragile]
+%\frametitle{Careful Example: Step 5}
+%
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=3.2in,trim=0 250 0 0,clip]{../figures/clusteringHierLinkageStepByStepCentroidPart3.pdf}
+%\end{figure}
+%
+%\begin{columns}[T]
+%\begin{column}{.35\textwidth}
+%Distance matrix ($\Delta$)
+%%\begin{blockcode}
+%\tiny
+%\begin{alltt}
+%     1    2    3    4    5    6    7
+%1 0.00 0.28 1.16 0.69 0.90 1.21 1.68
+%2 0.28 0.00 0.88 0.76 0.96 1.04 1.42
+%3 1.16 0.88 0.00 1.41 1.54 1.00 0.74
+%4 0.69 0.76 1.41 0.00 0.21 0.89 1.62
+%5 0.90 0.96 1.54 0.21 0.00 0.89 1.67
+%6 1.21 1.04 1.00 0.89 0.89 0.00 0.82
+%7 1.68 1.42 0.74 1.62 1.67 0.82 0.00
+%\end{alltt}
+%\end{column}
+%\begin{column}{.65\textwidth} 
+%Merge $\{3,7\}$ and $\{6\}$.
+%\end{column}
+%\end{columns}
+%\end{frame}
+%
+
+\begin{frame}[fragile]
+\frametitle{Linkages summary}
+
+\begin{table}
+\begin{tabular}{l|cccc}
+ & \parbox{.93in}{No inversions?} & \parbox{.9in}{Unchanged w/ monotone  transformation?} & \parbox{.55in}{Cut interpretation?} & Notes \\
+ \hline \\
+\smallCapGreen{Single} & 
+\textcolor{blue}{$\checkmark$} & \textcolor{blue}{$\checkmark$}  & \textcolor{blue}{$\checkmark$} & 
+\textcolor{red}{chaining} \\
+\hline \\
+\smallCapGreen{Complete} &
+\textcolor{blue}{$\checkmark$} & \textcolor{blue}{$\checkmark$} & \textcolor{blue}{$\checkmark$} & 
+\textcolor{red}{crowding}\\
+\hline \\
+\smallCapGreen{Average} &
+\textcolor{blue}{$\checkmark$} & \textcolor{red}{$\text{X}$} & \textcolor{red}{$\text{X}$} & \\
+\hline \\
+\smallCapGreen{Centroid} &
+\textcolor{red}{$\text{X}$} & \textcolor{red}{$\text{X}$} & \textcolor{red}{$\text{X}$} & 
+\textcolor{red}{inversions} \\
+\hline 
+\end{tabular}
+\end{table}
+Final notes:
+
+\begin{itemize}
+\item None of this helps determine what is the \alo{best} linkage
+\item Use the linkage that seems the most appropriate for the types of clusters you want to get
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Designing a clever radio system}
+We have a lot of songs and dissimilarity scores between them ($d_{ij}$)
+
+\vsp
+We want to build a clever radio system that takes a song specified by the user and produces
+a song of the ``same'' type
+
+\vsp
+We ask the user how ``risky'' he or she wants to be
+
+\begin{figure}
+\centering
+  \includegraphics[width=1.5in,trim=0 0 0 0,clip]{../figures/pandora.pdf} 
+\end{figure}
+
+How can we use hierarchical clustering and with what linkage?
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Linkages summary: Cut interpretations}
+Suppose we cut the tree at height $h = 1$.
+\begin{table}
+\begin{tabular}{l|l}
+\hline \\
+\smallCapGreen{Single} & 
+ For each point $X_i$, there is another point $X_j$ in the  \\ 
+ & same cluster with $d_{ij} \leq 1$ (assuming more than \\ 
+ & 1 point in  cluster).  Also, no points in different clusters \\ 
+ & are closer than 1. \\
+ \\
+\hline \\
+\smallCapGreen{Complete} &
+For each point $X_i$, every other point $X_j$ in the same \\
+& cluster has $d_{ij} \leq 1$. \\
+\\
+\hline 
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Data analysis example}
+Diffuse large B-cell lymphoma (DLBCL) is the most common type of non-Hodgkin's lymphoma
+
+\vsp
+It is clinically heterogeneous: 
+\begin{itemize}
+\item 40\% of patients respond well
+\item 60\% of patients succumb to the disease
+\end{itemize}
+\vsp
+The researchers propose that this difference is due to unrecognized molecular heterogeneity in the tumors
+
+\vsp
+We examine the extent to which genomic-scale gene expression profiling can further the understanding of 
+B-cell malignancies.
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{Data analysis example}
+Here, we have gene expression data at 2,000 genes for 62 cancer cells.
+
+\vsp 
+There are 3 cancer diagnoses: FL, CLL, DLBCL.  Each corresponds to a type of malignant lymphoma.
+
+\vsp 
+We want to use hierarchical clustering to understand this data set better.
+
+\begin{blockcode}
+load('../data/alizadeh.RData')
+
+genesT  = alizadeh$x
+genes   = t(genesT)
+Yfull   = alizadeh$type
+Y       = as.vector(Yfull)
+Y[Yfull == "DLBCL-A"] = 'DLBCL'
+Y[Yfull == "DLBCL-G"] = 'DLBCL'
+Y       = as.factor(Y)
+dist.mat    = dist(genes)
+\end{blockcode}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PCA plot}
+\begin{columns}[T]
+\begin{column}{.65\textwidth}
+\begin{figure}
+\centering
+  \includegraphics[width=2.5in,trim=0 0 0 0,clip]{../figures/clusteringGenesPCA.pdf} 
+\end{figure}
+\end{column}
+\begin{column}{.35\textwidth} 
+\vsp
+\vsp
+\vsp
+
+Two clear groups for FL and CLL
+
+\vsp
+DLBCL somewhat appears to be 1 group, but it is much more diffuse.
+\end{column}
+\end{columns}
+
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PCA plot}
+\begin{columns}[T]
+\begin{column}{.65\textwidth}
+\begin{figure}
+\centering
+  \includegraphics[width=2.5in,trim=0 0 0 0,clip]{../figures/clusteringGenesPCAfull.pdf} 
+\end{figure}
+\end{column}
+\begin{column}{.35\textwidth} 
+\vsp
+\vsp
+\vsp
+
+Here are the two sub-types identified by the researchers
+
+\vsp
+Let's look at their results further.
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Four hierarchical cluster solutions}
+\scriptsize
+\begin{table}
+\begin{tabular}{cc}
+  \includegraphics[width=1.7in,trim=0 40 0 55,clip]{../figures/clusteringGenesSingle.pdf}  &
+    \includegraphics[width=1.7in,trim=0 40 0 55,clip]{../figures/clusteringGenesComplete.pdf}  \\
+    Single & Complete \\
+  \includegraphics[width=1.7in,trim=0 40 0 55,clip]{../figures/clusteringGenesAverage.pdf}  &
+    \includegraphics[width=1.7in,trim=0 40 0 55,clip]{../figures/clusteringGenesCentroid.pdf}  \\
+  Average & Centroid 
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Complete linkage: A closer look}
+\begin{columns}[T]
+\begin{column}{.55\textwidth}
+\begin{figure}
+\centering
+  \includegraphics[width=2.5in,trim=0 0 0 0,clip]{../figures/clusteringGenesCompleteRect.pdf} 
+\end{figure}
+\end{column}
+\begin{column}{.45\textwidth} 
+\vsp
+\vsp
+\vsp
+
+\begin{blockcode}
+out.com = hclust(dist.mat,
+     method='complete')
+plot(out.com,xlab='',
+   main='',labels=Y)
+rect.hclust(out.com,k=12)
+
+out.cut = cutree(out.com,
+         k=12)
+\end{blockcode}
+Notice that FL and CLL are distinctly grouped, while there are many clusters inside the DLBCL type.
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Cluster methodology}
+In the paper, the researchers used hierarchical clustering to find cancer subtypes
+\vsp
+
+They used a variation on the methodology we have discussed
+
+\vsp 
+For a distance, they used correlation
+
+\vsp
+They used a centroid linkage (oddly, they do not encounter any inversions...)
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Full microarray}
+\begin{columns}[T]
+\begin{column}{.6\textwidth}
+\begin{figure}
+\centering
+  \includegraphics[width=2.7in,trim=20 0 30 80,clip]{../figures/geneNaturefigure1.pdf} 
+\end{figure}
+\end{column}
+\begin{column}{.4\textwidth} 
+\scriptsize
+\vsp
+\vsp
+
+\vsp
+Each row is a cDNA clone (essentially a gene) and each column
+is a mRNA sample (essentially an observation).
+
+\vsp
+The green/red colors on the microarray indicate mRNA expression relative to a reference.
+
+\vsp
+The color coding for labels was added {\it after} the clustering.  The non-cancer related colors are 
+experimental controls (other tissues).
+
+\vsp
+Both FL and CLL are near resting B-cells (\alo{indolence})
+
+\vsp
+DLBCL is highly expressed in the area where proliferation is controlled.  However, there is
+substantial variation
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Subset of microarray}
+\begin{columns}[T]
+\begin{column}{.6\textwidth}
+\begin{figure}
+\centering
+  \includegraphics[width=2.5in,trim=20 0 30 50,clip]{../figures/geneNaturefigure2.pdf} 
+\end{figure}
+\end{column}
+\begin{column}{.4\textwidth} 
+\scriptsize
+\vsp
+\vsp
+
+\vsp
+The variable presence of T lymphocytes in DLBCL biopsies was
+readily discernible by a T-cell gene expression signature
+
+\vsp
+Again, notice the difference in expression for DLBCL in proliferation region
+
+\vsp
+Likewise, FL and CLL are unexpressed in proliferation region.
+
+\vsp
+FL is highly expressed in Germinal Center B while  CLL is not.
+
+\vsp
+Some of the DLBCL is equally expressed in Lymph Node biology as
+normal lymph node/tonsil cells (grey). 
+
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Creating sub-types for DLBCL}
+\begin{columns}[T]
+\begin{column}{.6\textwidth}
+\begin{figure}
+\centering
+  \includegraphics[width=2.5in,trim=20 0 30 40,clip]{../figures/geneNaturefigure3.pdf} 
+\end{figure}
+\end{column}
+\begin{column}{.4\textwidth} 
+\scriptsize
+\vsp
+\vsp
+
+The vertical blue/orange bars indicate high expression levels associated with GC B-like
+and Activated B-like DLBCL, respectively.
+
+\begin{itemize}
+\item[\textbf{\textcolor{black}{A}}] The DLBCL type clustered into two groups
+based only on genes in Germinal Center B region.
+\item[\textbf{\textcolor{black}{B}}] A subset of the genes (excluding Proliferation,
+T-cell, and Lymph-node) ordered by hierarchical clustering.
+\item[\textbf{\textcolor{black}{C}}] Only looking at the differentially expressed regions from B.
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Comparing sub-types to mortality data}
+\begin{figure}
+\centering
+  \includegraphics[width=3in,trim=20 170 30 170,clip]{../figures/geneNatureFigure5.pdf} 
+\end{figure}
+Survival curve of patients, grouped by...
+\begin{itemize}
+\item[\textbf{\textcolor{black}{A}}] clustered sub-type
+\item[\textbf{\textcolor{black}{B}}] International Prognostication Index (IPI) \\($0 \leq $ IPI $ \leq 2$ vs. 
+$3 \leq $ IPI $ \leq 5$).
+\item[\textbf{\textcolor{black}{C}}] Low clinical risk ($0 \leq $ IPI $ \leq 2$), by clustered sub-type.
+\end{itemize}
+\script{Note: these are known as \alg{Kaplan-Meier plots}}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Data analysis example: Conclusion}
+The researchers found convincing sub-types of distinct cancers in previously diagnoses
+\vsp
+
+This result is quite interesting:
+\begin{itemize}
+\item \textcolor<1>{greenmain}{Compelling evidence that differential response to cancer treatments is the result (on average) of
+insufficiently differentiated cancer types}
+\item \textcolor<2>{greenmain}{Calls into question fundamental definitions such as what is a disease?}
+\item \textcolor<3>{greenmain}{Provides an alternative method to generate clinical diagnosis categories}
+\end{itemize}
+
+\vsp
+\textcolor<4>{greenmain}{\textcolor<-3>{white}{Conclusion: Qualitative {\it symptoms-based} categorization of disease is inadequate for diagnosis and treatment}}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Wrap-up}
+Just like in $K$-means, we can use CH-index to pick the number of clusters:
+\begin{blockcode}
+cutree(out.tree,k=K)
+\end{blockcode}
+\vsp
+
+There are many, many other clustering approaches to take: KNN, Factor analysis, level-sets of density
+estimators, mixture of normals, ...
+\end{frame}
+
+\end{document}

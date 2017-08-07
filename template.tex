@@ -1,0 +1,239 @@
+\documentclass[10pt]{article}
+\usepackage{scribeDefinitions}
+
+% To be entered
+\newcommand{\lecture}{Prof.\ Homrighausen}
+\newcommand{\scribe}{Your name}
+\newcommand{\chtitle}{Lecture title}
+\newcommand{\lecdate}{Date}
+
+
+\begin{document}
+\rule{6.5in}{1pt}
+
+\textsc{Statistical Machine Learning
+  \hfill 4 --- \chtitle
+  \hfill \lecdate}
+
+\textsc{Lecturer: \lecture \hfill Scribe: \scribe}
+\rule{6.5in}{1pt}
+
+
+\section{Minimax Risk}
+
+
+The {\em minimax risk} is 
+\begin{equation}
+  R_n = \inf_{\theta} \sup_{\hat\theta} R(\theta, \hat{\theta})
+  \label{eq:1}
+\end{equation}
+\begin{itemize}
+\item This is an Infimum over all estimators.
+\item An estimator is minimax if $\sup_{\theta} R(\theta, \hat{\theta}) =
+  \inf_{\tilde{\theta}} \sup_{\theta} R(\theta, \tilde{\theta})$
+\end{itemize}
+
+\begin{example}
+  $X_1, X_2, \dots, X_n \overset{iid}{\sim} N(\theta, 1)$ Then $\bar X$
+  is minimax for many loss functions. It's risk is $R_n = \frac{1}{n}$
+  which is the ``Parametric Rate''.
+\end{example}
+
+\begin{example}
+  $X_1, X_2,\dots, X_n \sim f$, where $f \in \F$ is some density. Let
+  $\F$ be the class of smooth densities  
+  \begin{equation}
+    \F = \left\{ f ; \int (f'')^2 < c_0\right\}
+  \end{equation}
+  Then $R_n \leq C n^{-4/5}$ for 
+  \begin{equation}
+    L(\hat{f}, f) = \int(f-\hat{f})^2 dx.
+  \end{equation}
+  Here $c_0$ and $C$ are some constants.
+\end{example}
+
+\begin{definition}
+  A loss function, $\ell$, is said to be bowl-shaped if $\{x: \ell(x)
+  \le c\}$ are convex and symmetric about zero 
+\end{definition}
+
+\begin{theorem}
+  Suppose $X\sim N_p(\theta, \Sigma)$. If the loss function is
+  bowl-shaped, then X is the unique (up to sets of measure 0) minimax
+  estimator of $\theta$. 
+\end{theorem}
+
+\begin{example}
+  Suppose $X \sim N(\theta,1)$ and $\theta \in [-m, m]$, $0 < m <
+  1$. When under squared-error loss, then the unique minimax estimator
+  is 
+  \begin{equation}
+    \hat{\theta}(x) = m \left(\frac{e^{mx}-e{-mx}}{e^{mx} + e^{-mx}}\right)
+  \end{equation}
+\end{example}
+
+
+
+
+
+
+
+
+
+
+\section{Maximum Likelihood}
+
+
+For parametric models, under some conditions, then Maximum Likelihood
+Estimator (MLE) is asymptotically minimax\footnote{this makes the MLE
+  a slightly weaker minimax estimator}
+
+
+Consider squared-error loss,
+\begin{equation}
+  R(\theta, \hat{\theta}) = \Var{\hat{\theta}}+\Bias[\hat{\theta}]^2
+\end{equation}
+Usually for a Maximum Likehood Estimator,
+\begin{equation}
+  \Bias^2 = O(n^{-2})
+\end{equation}
+and
+\begin{equation}
+  \Variance = O(n^{-1})
+\end{equation}
+This is because under appropriate regularity conditions on the
+likelihood,
+\[
+\Var{\hat{\theta}}
+= \frac{1}{nI_{\theta}} .
+\]
+Thus, for $n$ large, the variance term dominates and 
+\[
+MSE \approx \Variance
+\]
+and the variance achieves the Cram\'er-Rao lower bound.
+
+
+\section{The Hodges Estimator}
+Let $X_1, X_2,\dots,X_n \overset{iid}{\sim} N(\theta,1)$,
+$\hat{\theta}_{MLE} = \bar{X}$. Consider the following: 
+
+Let ,
+\begin{equation}
+  J_n = \left[ -\frac{1}{n^{1/4}}\ ,\ \frac{1}{n^{1/4}}\right]
+\end{equation}
+and
+\begin{equation}
+  \tilde{\theta}_n = 
+  \begin{cases}
+    \bar{X}_n & \textrm{for }\bar{X}_n \notin J_n\\
+    0 &\textrm{for }\bar{X}_n \in J_n.
+  \end{cases}
+\end{equation}
+Suppose $\theta \neq 0$. Then choose $\epsilon > 0$ so that,
+  $I = (\theta - \epsilon, \theta + \epsilon)$  does not contain 0.
+By the Law of Large Numbers,
+\[
+  \P(X_n \in I) \rightarrow 1
+\]
+At the same time, $J_n$ shrinks, so for $n$ large, $\tilde{\theta} =
+\bar{X_n}$ with high probability. 
+
+Now suppose $\theta = 0$. Then
+\begin{align*}
+  \P(\bar{X}_n \in J_n) &= \P(|\bar{X}_n| \leq n^{-1/4})\\
+  &= \P(\sqrt{n} |\bar{X}_n| \leq n^{1/4})\\
+  &=\P(|N(0,1)| \leq n^{1/4}) \rightarrow 1
+\end{align*}
+For large $n$, $\tilde{\theta} = 0 = \theta$ with high probability.
+This is much better than $\bar{X}$ when $\theta = 0$. So
+$\tilde{\theta}$ is better for $\theta=0$ and acts like
+$\bar{X}$ when $\theta \neq 0$.
+
+However, the Hodges estimator has bad risk properties for $\theta$
+near the boundaries of $J_n$. The risk is plotted in
+\autoref{fig:hodges}.
+%\begin{figure}[t!]
+%  \centering
+%  \includegraphics[height=4in]{hodges.png}
+%  \caption{$nMSE$ of the Hodges estimator for $n=5$ (blue), $n=50$
+%    (purple), and $n=500$ (olive). Note that $nMSE(\bar{X})=1$.} 
+%  \label{fig:hodges}
+%\end{figure}
+
+
+\section{James-Stein Estimator}
+\label{sec:convergence}
+
+Let $X \sim N_p(\theta,I_p)$. Note that this is just one observation. We
+want $\hat{\theta}(x)$ to estimate $\theta$. Of course taking
+$\hat{\theta}=X$ makes sense since $X$ is 
+the MLE as well as
+the Bayes Estimator of a particular prior distribution. Doing this
+also makes $\hat{\theta}$ the UMVUE, the smallest variance of all
+unbiased estimators. $\hat{\theta}$ is the minimax for many loss
+functions, including, 
+\begin{equation}
+  L(\hat{\theta}) = \| \theta - \hat{\theta} \|^2_2 = \sum^n_{i = 1}(\theta_i - \hat{\theta_i})^2
+\end{equation}
+$\hat{\theta}$ is also the Ordinary Least Squares Estimator,
+\begin{equation}
+  \hat{\theta} = \argmin_a \|a-x\|^2_2
+\end{equation}
+
+
+However, there is a better estimator~\citep{Stein1981,JamesStein1961}.
+Minimax says $\hat{\theta}$ satisfies
+\begin{equation}
+  \sup_{\theta} \Expect{\|\theta-\hat{\theta}\|_2^2} =
+  \inf_{\tilde{a}} \sup_{\theta}\Expect{\|\theta-\tilde{a}\|^2_2}\ .
+\end{equation}
+For any estimator, $a$, the worst case risk is at least as large as $\hat{\theta}$'s.
+But what about other $\theta$'s? The James-Stein Estimator,
+$\hat{\theta_{js}}$, has the property
+\begin{equation}
+  \sup_{\theta} \Expect{\|\theta - \hat{\theta}_{js}\|^2_2} = \sup_{\theta} \Expect{
+    \| \theta - \hat{\theta} \|^2_2}
+\end{equation}
+But for almost all $\theta$,
+\begin{equation}
+  \Expect{\|\theta - \hat{\theta}_{js}\|^2_2} < \Expect{
+    \| \theta - \hat{\theta} \|^2_2}.
+\end{equation}
+In other words, $\hat{\theta}_{js}$ has the same worst case risk, but
+better risk everywhere else, as long as $p \geq 3$.
+
+The James-Stein Estimator is
+\begin{equation}
+  \hat{\theta}_{js}(x) = \left( 1-\frac{p-2}{\|x\|^2_2}\right)x.
+\end{equation}
+This estimator ``shrinks'' $X$ to zero.  As $\|\theta\|_2
+\rightarrow \infty$, $R(\theta, \hat{\theta}_js) \nearrow R(\theta,
+\hat{\theta})$. But, we could shrink to anything, and the James-Stein
+Estimator would behave similarly. To shrink toward $v\in\R^p$, use
+\begin{equation}
+  \left(1-\frac{p-2}{\|x-v\|^2_2}\right)(x-v)+v
+\end{equation}
+
+But the standard JS estimator has a odd property: if $\norm{x}_2$ is
+large enough, the estimator can change all the signs of $x$. But we
+can improve it.
+
+Consider only the positive part of the James-Stein Estimator,
+\begin{equation}
+  \hat{\theta}_{js+}(x) = \left( 1-\frac{p-2}{\|x\|^2_2}\right)_{+}x
+\end{equation}
+One can show that
+\begin{equation}
+  R(\theta, \hat{\theta}_{js+}) \leq R(\theta, \hat{\theta}_{js}),\ \ \forall\theta.
+\end{equation}
+However, $\hat{\theta_{js+}}$ is still not the best estimator.
+It can be shown that $\exists \hat{\theta}_0$ such that
+\begin{equation}
+  R(\theta, \hat{\theta}_0) \leq R(\theta,\hat{\theta}_{js+}),\ \ \forall \theta.
+\end{equation}
+
+
+
+\bibliography{AllReferences}
+\end{document}

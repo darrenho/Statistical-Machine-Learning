@@ -1,0 +1,52 @@
+\documentclass[11pt]{article}
+\usepackage{_defsAndPackages675notation}
+\usepackage{multicol}
+
+\usepackage{amsthm,amssymb,amsmath}
+
+\usepackage{graphicx}
+\topmargin=0in
+\headheight=0in
+\headsep=0in
+
+\columnsep=-0.28in
+
+\oddsidemargin=0in
+\evensidemargin=0in
+
+\textheight=9in
+\textwidth=6.5in
+
+\footskip=0in
+
+\begin{document}
+
+\baselineskip=13.2pt
+\parindent=0pt
+\parskip=13.2pt
+\pagestyle{empty}
+
+\renewcommand{\mu}{\textrm{mu}}
+\newcommand{\sd}{\textrm{sd}}
+\centerline{\bf \Large STAT 675 -- Homework 4}
+\centerline{\bf \large Due: Nov. 13}
+\begin{enumerate}
+\item Let's look at the digits data with boosting.
+Download the digits data\footnote{{\tt http://yann.lecun.com/exdb/mnist/}} and 
+read the website for relevant information about the dataset.  We are going to compare classifying
+the 4's and 9's, which tends to be difficult.  Create a training and a test data set.
+
+FOR each of the following base classifiers: logistic regression with 1 covariate, logistic regression with 10 covariates, trees with 1 split (stump), and trees with 10 splits; DO:
+\begin{enumerate}
+\item For AdaBoost, make a plot of the training error and test error as a function of the number of boosting iterations.  Do you see evidence of overfitting?
+\item Do the same for LogitBoost (You can look at {\tt http://stat.ethz.ch/$\sim$dettling/boosting.html} for an implementation for stump classifiers)
+\end{enumerate}
+Which procedure combination works best?
+
+\vspace{2in}
+\item Try the above, but with random forest instead, trying different combinations of {\tt mtry} and number of bootstrap sample.
+\end{enumerate}
+\end{document}
+
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%

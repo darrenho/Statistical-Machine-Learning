@@ -1,0 +1,78 @@
+\documentclass[11pt]{article}
+\usepackage{_defsAndPackages675notation}
+\usepackage{multicol}
+
+\usepackage{amsthm,amssymb,amsmath}
+
+\usepackage{graphicx}
+\topmargin=0in
+\headheight=0in
+\headsep=0in
+
+\columnsep=-0.28in
+
+\oddsidemargin=0in
+\evensidemargin=0in
+
+\textheight=9in
+\textwidth=6.5in
+
+\footskip=0in
+
+\begin{document}
+
+\baselineskip=13.2pt
+\parindent=0pt
+\parskip=13.2pt
+\pagestyle{empty}
+
+\renewcommand{\mu}{\textrm{mu}}
+\newcommand{\sd}{\textrm{sd}}
+\centerline{\bf \Large STAT 675 -- Homework 3}
+\centerline{\bf \large Due: Oct. 23}
+\begin{enumerate}
+\item Let's look at the digits data with sparse logistic regression, 
+LDA, and (kernel) support vector machines.
+
+\begin{enumerate}
+\item Download the digits data ({\tt http://yann.lecun.com/exdb/mnist/}) and 
+read the website for relevant information about the dataset.
+
+\item We wish to do two-class classification in two cases.  Apply the above mentioned 
+techniques to these data sets.  
+\begin{enumerate}
+\item Comparing 3's to 5's 
+\item Comparing 4's to 9's.  
+\end{enumerate}
+Be sure to plot the results of LDA on the plane $\mathcal{H}_1$.  Try different
+kernels for the SVM.
+\item By looking at  $\mathcal{H}_1$, do you feel a kernelization using these
+coordinates as data would improve the classification rate.
+\item Which of the methods has a better test error rate?
+\item State how you could kernelize LDA into a nonlinear method.  Note: 
+It is clear how to kernelize it through a feature map.  This might be very expensive,
+however.  Can you kernelize it through inner products instead?
+\end{enumerate}
+
+\item Show the following (using notation from lecture)
+\begin{enumerate}
+\item 
+\[
+\P(Y \neq \hat{g}(X) | X = x)
+= 
+1- \left(\mathbf{1}m(x) + (1-\mathbf{1})(1-m(x))\right),
+\]
+where $\mathbf{1} \equiv \mathbf{1}_{g(x) = 1}(x)$.
+\item 
+\begin{align*}
+\P(Y \neq \hat{g}(X) | X = x) - \P(Y \neq g^*(X) | X = x) 
+& =  2|m(x) - 1/2|\mathbf{1}_{g^*(x)\neq \hat{g}(x) }(x) 
+\end{align*}
+\item Use these results to show that $g^*$ is the Bayes' rule.
+\end{enumerate}
+
+\end{enumerate}
+\end{document}
+
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%

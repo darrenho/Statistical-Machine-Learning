@@ -1,0 +1,1621 @@
+\documentclass[12pt]{beamer}
+%\usepackage[usenames,dvipsnames]{xcolor}
+
+\usepackage{_defsAndPackages675notation}
+\usepackage{_defsAndPackages675beamer}
+
+%\DeclareMathSizes{12}{12}{5}{12}
+\newcommand{\parenthetical}[2]{#1  \scriptstyle \alr{( #2)}}
+\date{}
+
+\begin{document}
+
+\title{\alg{Classification via Boosting}}
+\subtitle{\classTitle}
+
+\begin{frame}
+\maketitle
+%\titlepage
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=1in]{.../figures/CSU_logo2.eps}
+%\end{figure}
+%
+\organization
+%
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{History}
+Boosting was proposed in the computational learning literature in a series of papers:
+\begin{itemize}
+\item Schapire (1990)
+\item Freund (1995)
+\item Freund and Schapire (1997)
+\end{itemize}
+
+Let's examine a bit the history of boosting, through these three papers
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+The first simple boosting procedure was developed using the \alg{PAC-learning} framework
+
+\vsp
+We covered PAC-learning in the case of generalization error bounds for lasso
+
+\vsp
+In classification, there is more of a computer science flair to notation/terminology that is helpful to know
+when reading the literature
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+Let's introduce the following notation\footnote{I'm going to use standard notation from computer science
+for this section.  It will conflict with previous notation, but it quite firmly entrenched in the literature.}
+\begin{itemize}
+\item A \smallCapGreen{Concept} $c$ is a Boolean function on some domain of \smallCapGreen{Instances} $\mathcal{X}$
+and contained in a \smallCapGreen{Concept class} $\mathcal{C}$
+
+\script{Here think of concept $\leftrightarrow$ prediction procedure and $\mathcal{X}$ as the domain of the covariates.
+Also, the concept class $\leftrightarrow$ parameter space}
+
+\item The learner is assumed to have access to a source of \smallCapGreen{examples} $EX$, that is randomly
+and independently drawn from $\mathcal{X}$ according to a fixed distribution $\P$, returning an instance $x$
+and label $c(x)$ according to the unknown \smallCapGreen{target concept}
+
+\item Given access to $EX$, the learning algorithm outputs a \smallCapGreen{Hypothesis} $h \in \mathcal{H}$, which is a 
+prediction rule on $\mathcal{X}$
+\end{itemize}
+\end{frame}
+
+%\begin{frame}[fragile]
+%\frametitle{PAC-learning for classification}
+%
+%\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+PAC-learning came about as a response to previous computer science attempts to find \alg{consistent learners},
+
+\script{This is when we can perfectly classify a given set of instances $\leftrightarrow$ zero training error.  These
+concept classes aren't truly interesting, as they are either trivial, impossible, and/or have super-polynomial growth 
+in complexity}
+
+\vsp
+The language of PAC-learning was developed to define whether a concept class $\mathcal{C}$ is \alg{learnable}
+
+\vsp
+Let $\textrm{err} = \P(h(x) \neq c(x))$
+
+\vsp
+
+A concept class $\mathcal{C}$ is \alg{strongly learnable} (with $\mathcal{H}$) provided there exists an algorithm $A$ such that 
+for all $\{c \in \mathcal{C}, \P \textrm{ on } \mathcal{X}, \epsilon > 0, \delta \leq 1\}$, there exists an $h \in \mathcal{H}$ where
+\[
+\P^n (\textrm{err} \leq \epsilon) \geq \delta
+\]
+\script{The number of instances from $EX$ required grows $\leq$ polynomially in $1/\epsilon,1/\delta$}
+%\[
+%\mathcal{X} = \cup_{n \geq 1} \mathcal{X}_n \quad \textrm{and} \mathcal{C} = \cup_{n \geq 1} \mathcal{C}_n
+%\]
+%
+%\script{For asymptotic reasons, we factor the concept class and instances according to a parameter $n$}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example:} Let 
+\begin{itemize}
+\item The instances be $\mathcal{X} = \R$,
+\item The concept class $\mathcal{C}$ be the set of positive half lines 
+
+\script{That is, an object that splits $\R$ into two pieces, labeling things to the left negative and the right positive}
+\end{itemize}
+\vsp
+
+The consistent learner would find any $h \in \mathcal{H} = \mathcal{C}$ in the transition region from negative to positive
+
+\vsp
+\begin{itemize}
+\item Is this a PAC learner?  
+\item If so, how many examples do we need in order to ensure the learning algorithm is 
+\alg{$\epsilon$-good}?
+
+\script{That is, $\textrm{err} \leq \epsilon$}
+\item Does the selection of the point in the transition region matter?
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example (continued):}  Fix an $h$ and $c$.   Let $h_*,c_* \in \R$ be the 
+classification boundaries. Then, we only make a mistake
+if $x \in [c_*-h_*,c_*+h_*]$.  Hence, 
+%\[
+%\textrm{err} \leq \epsilon \alr{\Leftrightarrow} \P(h(x) \neq c(x)) \leq\epsilon 
+%\alr{\Leftrightarrow} \P([c_*-h_*,c_*+h_*])\leq\epsilon
+%\]
+%defines two regions
+\[
+\textrm{err}=\P(h(x) \neq c(x))= \P([c_*-h_*,c_*+h_*])
+\]
+
+
+%\vsp
+%As long as neither of these events happen, we can be assured that $h$ is \alo{$\epsilon$-good}
+
+\vsp
+\smallCapGreen{Note:} From now on, think of 
+$h$ as being formed based on $n$ data points $x_1,\ldots,x_n \stackrel{i.i.d}{\sim} \P$, and $\data = \{x_i\}_{i=1}^n$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+%Let's just look to the right of $c$
+%
+%\script{The other side follows symmetrically}
+%\vsp
+%
+%The hypothesis $h$ (trained on the data) is more than $\epsilon$ to the right of $c$ (measured by $D$)
+%
+%\script{Let's denote this \alo{region} $E_+$, and the event $h - c > \epsilon$ as $e_+$}
+
+\smallCapGreen{Example (continued):} Fix an $\epsilon > 0$.
+
+Let $g_+$ be the minimal quantity such that 
+$G_+ = [c_*,g_+]$ obeys $\P(G_+) \geq \epsilon$.  
+%\vsp
+%
+%We want to characterize $\textrm{err} \leq \epsilon$ in terms of $E_+$.
+%
+
+\script{Define $G_-$ and $g_-$ similarly for the other side of the interval}
+\vsp
+%Let $\alb{\P(x_1 \in E_+)} = \alb{\epsilon}$.  Then:
+
+Let's define two (bad) events 
+
+\begin{itemize}
+\item $B_+ = (g_+,\infty)$
+\item $B_- = (-\infty, g_-)$
+\end{itemize}
+\vsp
+
+\smallCapGreen{Intuition:} If any $x \in \data$ falls in $G_+$, $h_*$ will be in $G_+$ as 
+\begin{itemize}
+\item[] $x \in G_+ \Rightarrow c(x) = +$
+\item[] $x < c_* \Rightarrow c(x) = -$
+\end{itemize}
+%So, $\textrm{err} \leq \epsilon$ as
+%\[
+% \P([c_*-h_*,c_*+h_*])\leq \epsilon
+%\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example (continued):} 
+\vsp
+
+%So, if $G_+$ is a `good set', we need to control the probability of the `bad set' $B_+$
+%\vsp
+
+By the previous argument, we can bound the probability of $B_+$
+%Let $\alb{\epsilon} = \alb{\P(x \in E_+)}$
+\begin{align*}
+\P^n(h_* \in B_+) 
+& \leq 
+\P^n(x_1 \notin G_+,\ldots, x_n \notin G_+)  \parenthetical{\quad}{\textrm{product measure}}\\
+& =
+\P(x_1 \notin G_+)\cdots\P(x_n \notin G_+) \\
+& \leq
+(1-\epsilon)^n  \\
+& \leq
+e^{-\epsilon n} \parenthetical{\quad}{1+x \leq e^{x}}
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example (continued):} 
+
+\vsp
+\alb{
+A concept class $\mathcal{C}$ is strongly learnable (with $\mathcal{H}$) provided there exists an algorithm $A$ such that 
+for all $\{c \in \mathcal{C}, \P \textrm{ on } \mathcal{X}, \epsilon > 0, \delta \leq 1\}$, there exists an $h \in \mathcal{H}$ where
+\[
+\P^n (\textrm{err} \leq \epsilon) \geq \delta
+\]
+}
+
+
+%\[
+%\P^n (\textrm{err} > \epsilon) 
+%\]
+\begin{align*}
+\P^n (\textrm{err} > \epsilon) 
+& =
+\P^n(\P([c_*-h_*,c_*+h_*] )> \epsilon) \\
+& \leq
+\P^n(\P([c_*-h_*])>\epsilon \cup \P([c_*+h_*])> \epsilon) \\
+& \leq
+\P^n(\P([c_*-h_*])>\epsilon) +  \P^n(\P([c_*+h_*])> \epsilon) \\
+& \leq
+\P^n(h_* \in B_-) +  \P^n(h_* \in B_+) \\
+& \leq 
+2e^{-\epsilon n}
+\end{align*}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example (conclusion):} 
+\vsp
+
+\script{The number of instances from $EX$ required grows $\leq$ polynomially in $1/\epsilon,1/\delta$}
+\vsp
+
+Let $\delta > 0$ be given.
+
+\[
+\P^n (\textrm{err} > \epsilon)  \leq 2e^{-\epsilon n} \stackrel{set}{=} \delta
+\]
+Result: $n > \epsilon^{-1} \log(2/\delta)$, this concept class 
+is PAC-learnable
+
+\vsp
+Alternatively, invert to find that with probability $1-\delta$
+\[
+\textrm{err} \leq \frac{1}{n} \log(2/\delta)
+\]
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{A general result:} 
+
+\vsp
+Suppose $|\mathcal{H}| < \infty$ (that is; we have a finite hypothesis space).  If an algorithm $A$ finds
+a hypothesis $h \in \mathcal{H}$ that is  consistent with $n$ examples, where 
+\[
+n > \frac{1}{\epsilon}(log(|\mathcal{H}|) + \log(1/\delta)).
+\]
+Then
+\[
+\P^n(\textrm{err} > \epsilon) \leq \delta
+\]
+%\script{That is, $h$ is $\epsilon$-good}
+
+\vsp
+Why does the bound depend on $|\mathcal{H}|$?
+
+\pause
+\script{The more rules, the more we can fit the training data (and then do worse predictions)}
+\pause
+\vsp
+
+Why is the bound logarithmic in $|\mathcal{H}|$?
+\pause
+
+\script{Name each hypothesis in binary.  How many bits do we need?  
+\pause$\log_2|\mathcal{H}|$}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{A general result (Proof):} 
+\begin{align*}
+\P^n (\textrm{err} > \epsilon) 
+& =
+\P^n (\textrm{err} > \epsilon \cap h \textrm{ is consistent})  \\
+& \leq 
+\P^n (\textrm{err} > \epsilon \cap \exists h \in \mathcal{H}: h \textrm{ is consistent})  \\
+& \leq 
+\P^n (\exists h \textrm{ that is } \epsilon-\textrm{bad}, h \textrm{ is consistent})  \\
+& \leq 
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} \P^n (h \textrm{ is consistent})  \\
+& = 
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} \P^n (h(x_1) = c(x_1), \ldots, h(x_n) = c(x_n)) \\
+& = 
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} \prod_{i=1}^n \P (h(x_i) = c(x_i)) \\
+& \leq
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} (1-\epsilon)^n
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{A general result (Proof):} 
+\begin{align*}
+\P^n (\textrm{err} > \epsilon) 
+& \leq
+\sum_{h: h \textrm{ is } \epsilon-\textrm{bad}} (1-\epsilon)^n \\
+& =
+|\{h: h \textrm{ is } \epsilon-\textrm{bad}\}| (1-\epsilon)^n \\
+& \leq
+|\mathcal{H}| (1-\epsilon)^n \\
+& \leq
+|\mathcal{H}| e^{-\epsilon n} \\
+& \stackrel{set}{=}
+\delta
+\end{align*}
+Invert to get result
+
+\vsp
+The trick is that we're leveraging the finite nature of $\mathcal{H}$ to get a uniform bound
+
+\script{This is why the set $\{h: h \textrm{ is } \epsilon-\textrm{bad}\}$ is nonrandom, it only depends
+on $c$, $\mathcal{H}$, $\P$, and $\epsilon$.  Tracking a particular consistent $h$ is harder, as it is random}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+What we need to refine this result for infinite $\mathcal{H}$ is to know more about its \alo{intrinsic} complexity
+
+\vsp
+A common notion for this is known as \alg{Vapnik-Chervonenkis (VC)} dimension
+
+\vsp
+This gives us a better idea of the \alo{complexity} of the hypothesis space $\mathcal{H}$
+\end{frame}
+
+\transitionSlide{VC-dimension}
+\begin{frame}[fragile]
+\frametitle{Shattering}
+Let $\mathcal{A}$ be a class of sets, such as
+\begin{itemize}
+\item $\mathcal{A} = \{(-\infty,t]:t\in\R\}$
+\item $\mathcal{A} = \{(a,b]:a \leq b\}$
+\item $\mathcal{A} = $ all rectangles in $\R^d$
+\end{itemize}
+Let $F = \{x_1,\ldots,x_n\}$ be a finite set, and $G \subseteq F$
+\script{$F$ is always finite}
+
+\vsp
+We say that \alg{$\mathcal{A}$ picks out $G$} (relative to $F$) if $\exists A \in \mathcal{A}$ s.t.
+\[
+A \cap F = G
+\]
+\smallCapGreen{Example:} Let $\mathcal{A} = \{(a,b]:a \leq b\}$, $F = \{1,2,7,8,9\}$ and $G = \{2,7\}$.  Then
+$\mathcal{A}$ picks out $G$ (choose $A = (1.5,7.5]$).
+
+However, $G = \{1,9\}$ cannot be picked out by $\mathcal{A}$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Shattering}
+Let $\alb{S(\mathcal{A},F)}$ be the number of subsets of $F$ that can be picked out by $\mathcal{A}$
+
+\vsp
+Of course, $\alb{S(\mathcal{A},F)} \leq 2^n$
+
+\script{The cardinality of the power set of $F$}
+
+\vsp
+We say that \alg{$F$ is shattered by $\mathcal{A}$} if $S(\mathcal{A},F) = 2^n$
+
+\vsp
+Also, let $\mathcal{F}_n$ be all finite sets with $n$ elements
+
+\vsp
+Then we have the \alg{shattering coefficient} of $\mathcal{A}$
+\[
+s_n(\mathcal{A}) = \sup_{F \in \mathcal{F}_n} S(\mathcal{A},F)
+\]
+
+\vsp
+\smallCapGreen{Famous theorem:} Let $\mathcal{A}$ be a class of sets.  Then
+\[
+\P(\sup_{A \in \mathcal{A}} |\hat{\P}(A) - \P(A)| > \epsilon) \leq 8 s_n(\mathcal{A}) e^{-n\epsilon^2/32}
+\]
+\script{Vapnik, Chervonenkis (1971)}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Shattering}
+This partly solves the problem.  But, how big can $s_n(\mathcal{A})$ be?
+
+\vsp
+Often times, $s_n(\mathcal{A}) = 2^n$ for all $n$ up to some $d$, then $s_n(\mathcal{A}) < 2^n$
+for all $n > d$
+
+\vsp
+This $d$ is the \alg{Vapnik-Chervonenkis (VC) dimension}
+
+\vsp
+\smallCapGreen{Note:} Often times, the subset formulation is converted to functions by assigning labels
+to the points. 
+
+\script{This should be compared with SVMs, where we wish to separate points with hyperplanes}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{VC-dimension}
+Imagine that $\mathcal{A}$ is the set of hyperplanes in $\R^2$.  Let $\mathcal{F}_n$ be all sets of $n$ points.
+
+\vsp
+We can shatter almost all $F \in \mathcal{F}_3$ (one is enough, though)
+
+\vsp
+But, we cannot shatter any $F \in \mathcal{F}_4 \Rightarrow d = 3$ 
+\begin{figure}
+\centering
+\includegraphics[width=3.75in]{../figures/vcDimension.pdf}
+\caption*{Bousquet et al. ``Introduction to Statistical learning Theory''}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{VC-dimension}
+It is tempting to think that the number of parameters determines the VC dimension
+\vsp
+
+However, if we let $\mathcal{A} = \{\sin(tx): t \in \R\}$, this is a one parameter family.
+
+\vsp 
+$\mathcal{A}$ can shatter a $F$ for any $\mathcal{F}_n \Rightarrow d = \infty$
+\begin{figure}
+\centering
+\includegraphics[width=3in]{../figures/vcDimensionSin.pdf}
+\caption*{Bousquet et al. ``Introduction to Statistical learning Theory''}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{VC-dimension and Sauer's theorem}
+Suppose that $\mathcal{A}$ has VC-dimension $d < \infty$.  Then, for any $n \geq d$,
+\[
+s_n(\mathcal{A}) \leq (n + 1)^d
+\]
+
+\smallCapGreen{Punchline:} For small $n$, the shattering coefficient increases exponentially.
+For large $n$, the shattering coefficient increases polynomially 
+
+\vsp
+If $n$ is large enough and $d < \infty$ then 
+\begin{align*}
+\P(\sup_{A \in \mathcal{A}} |\hat{\P}(A) - \P(A)| > \epsilon) 
+& \leq 
+8 s_n(\mathcal{A}) e^{-n\epsilon^2/32} \\
+& \leq 
+8(1+n)^d e^{-n\epsilon^2/32} \\
+\end{align*}
+\script{We'll leave this topic for now.  We return weak learners/boosting and address VC dimension again
+soon.}
+\end{frame}
+
+\transitionSlide{Boosting (again)}
+
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+Suppose a learning algorithm cannot attain an error rate below a fixed amount (say 40\%)
+
+\vsp
+Can we still drive the error rate arbitrary close to zero?
+
+\vsp
+Boosting considers this problem, augmenting classifiers that are only marginally better 
+than random guessing
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+A concept class $\mathcal{C}$ is \alg{weakly learnable} (with $\mathcal{H}$) provided there exists an algorithm $A$
+and $\gamma > 0$ such that 
+for all $\{c \in \mathcal{C}, \P \textrm{ on } \mathcal{X}, \delta \leq 1\}$, there exists an $h \in \mathcal{H}$ produced
+by $A$ on $n$ examples where
+\[
+\P^n (\textrm{err} \leq 1/2 - \gamma) \geq \delta
+\]
+\script{Again, only polynomial growth of $n$ is allowed}
+
+\smallCapGreen{Note:} This means that there is an algorithm that, with high probability can do slightly better than 
+random guessing
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{PAC-learning for classification}
+\smallCapGreen{Example:} Let $\mathcal{X} = \{0,1\}^n \cup \{Z\}$, $\mathcal{C}$ be all functions on $\mathcal{X}$,
+and $\P(\{Z\}) = 1/4$, uniform on all other elements.  Given a set of examples, the algorithm will quickly learn
+$c(Z)$, as $Z$ is very likely.
+
+\vsp
+However, as we are only viewing polynomial number of examples from $|\mathcal{X}| \geq 2^n$, the algorithm
+will do not much better than random guessing.  Then
+\[
+\textrm{expected error} \approx \frac{1}{4}(0) + \frac{3}{4}\cdot \frac{1}{2} = \frac{3}{8}
+\]
+\vsp
+So, there exists situations that are only weakly learnable. Is this the end of the story...?
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{Schapire (1990)}
+This paper answered the question: is there a gap between strong and weak learnability?
+
+\vsp
+The answer is really no
+
+\vsp
+A concept class $\mathcal{C}$ is weakly learnable if and only if it is strongly learnable\footnote{The 
+wrinkle is that we are allowed to resample from altered versions of the training set and change the
+hypothesis class $\mathcal{H}$}
+
+\vsp
+The cool part is that the proof is constructive and produces the first \alo{boosting} algorithm
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Overall boosting philosophy}
+\smallCapGreen{Given:}
+\begin{enumerate}
+\item  $n$ examples from some fixed, unknown $\P$
+\item a weak learning algorithm $A$ producing $h \in \mathcal{H}$
+\end{enumerate}
+\vsp
+
+\smallCapGreen{Produce:} a new hypothesis $H \in \mathcal{H}_{new}$ with error $\leq \epsilon$
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Schapire (1990)}
+The first boosting algorithm for a weak learning algorithm $A$
+\begin{enumerate}
+\item  A hypothesis $h_1$ is formed on $n$ instances
+\item A hypothesis $h_2$ is formed on $n$ instances, half of which are misclassified by $h_1$
+
+\script{More specifically, a fair coin is flipped.  If the result is \alo{heads} then $A$ draws samples
+$x \sim \P$ until $h_1(x) = c(x)$.  If the result is \alo{tails} then we wait until $h_1(x) \neq c(x)$}
+\item A hypothesis $h_3$ is formed on $n$ instances, for which $h_1$ and $h_2$ disagree
+\item the boosted hypothesis $h_b$ is the majority vote of $h_1,h_2,h_3$
+\end{enumerate}
+\vsp
+
+Schapire's ``strength of weak learnability'' theorem shows that $h_b$ has improved performance over $h_1$.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Schapire (1990)}
+Of course, if this rejection sampling is occurring over small probability regions of $\P$, then we may wait a long
+time (i.e.: not polynomially)
+
+\vsp
+However, in the same paper they 
+\begin{enumerate}
+\item bound the expected running time
+\item use the $\delta$ parameter to bound with high probability the actual running time
+\end{enumerate}
+\script{details omitted}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Freund (1995)}
+This paper augmented the results to show that we can combine many weak learners simultaneously
+
+\vsp
+This improves the results of the simple boosting proposed by Schapire (1990)
+
+\vsp
+The bottom line is that we can grow the number of comparisons sub-polynomially and still get polynomial complexity
+in the number of instances
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Weakness of both papers}
+Each paper and associated theory required the weak learner to produce a classifier with
+a fixed error rate; that is $\gamma$
+
+\vsp
+This led to a more realistic version, now known as \alg{AdaBoost}
+
+\vsp
+\alg{AdaBoost} is more adaptive and realistic by dropping this assumption
+\end{frame}
+
+\transitionSlide{AdaBoost}
+%
+%\begin{frame}[fragile]
+%\frametitle{Motivation}
+%\alo{Reminder:}
+%We are attempting to make a classifier $\hat{g}$ such that
+%\[
+%R(\hat{g}) = \P(\hat{g}(X) \neq Y | \data) \approx \inf_{g} R(g) = \P(\min\{\eta(X),1-\eta(X)\}) 
+%\]
+%\script{The \alo{Bayes' risk}}
+%
+%where $\eta(x)  = \P(Y = 1 | X=x)$
+%
+%\vsp
+%The infimum is achieved by $g^*(x) = g(2\eta(x) - 1)$, where
+%\[
+%g(x) 
+%= 
+%\begin{cases}
+%1 & \textrm{ if } x > 0 \\
+%-1 & \textrm{ if } x \leq 0 \\
+%\end{cases}
+%\]
+%\alg{Boosting} seeks to generate a \alo{linear combination} of base classifiers
+%\end{frame}
+%\begin{frame}[fragile]
+%\frametitle{Motivation}
+%%\smallCapGreen{Motivation:} 
+%Create a committee of classifiers that combines many \alg{weak} classifiers 
+%
+%\vsp
+%Letting
+%\[
+%\hat{R}(g) = \frac{1}{n} \sum_{i=1}^n \mathbf{1}_{Y_i \neq g(x)}(X_i)
+%\]
+%with prediction risk
+%\[
+%R(g) = \E_{Z} \mathbf{1}(Y \neq g(X))
+%\]
+%
+%A weak classifier is a $g$ such that $R(g)$ is only slightly better than \alo{random guessing}
+%
+%\script{These are the weak learners}
+%\end{frame}
+
+%page 410, 361,353(),341
+\begin{frame}[fragile]
+\frametitle{Boosting framework}
+\smallCapGreen{Goal:} Produce a sequence of (weak) classifiers $g_1,\ldots,g_M$  on repeatedly modified data
+
+\vsp
+The final classifier is:
+\[
+g(x) = \textrm{sgn}\left(\sum_{m=1}^M \beta_m g_m(x)\right)
+\]
+
+\vsp
+The $\beta_m$ are the \alg{boosting weights} to weight the \alo{classifiers}
+
+\vsp
+The modified data occurs by creating \alg{training weights} $w_1,\ldots,w_n$ to weight the \alo{observations}
+
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost outline}
+We give an overview of `AdaBoost.M1.' 
+
+\script{Freund and Shapire (1997)}
+
+\vsp
+First, train the classifier as usual
+
+\script{This is done by setting $w_i \equiv 1/n$}
+
+\vsp
+At each step $m$, the misclassified observations have their weights increased
+
+\script{Implicitly, this lowers the weight on correctly classified observations}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost algorithm}
+\begin{enumerate}
+\item Initialize $w_i \equiv 1/n$
+\item For $m = 1,\ldots,M$
+\begin{enumerate}
+\item Fit $g_m(x)$ on $\data$, weighted by $w_i$
+\item Compute
+\[
+R_m = \frac{\sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g_m(X_i))}{\sum_{i=1}^n w_i}
+\]
+
+\item Find $\beta_m = \log((1-R_m)/R_m)$
+\item Set $w_i \leftarrow w_i\exp\{\beta_m \mathbf{1}(Y_i \neq g_m(X_i))\}$
+\end{enumerate}
+\item \smallCapGreen{Output:} $g(x) = \textrm{sgn}\left(\sum_{m=1}^M \beta_m g_m(x)\right)$
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Simulation}
+Let's use the classifier \alg{trees}, but with `depth 2-stumps'
+
+\vsp
+These are trees, but constrained to have no more than 4 terminal nodes
+
+\begin{figure}
+\includegraphics[width=2.5in]{../figures/treeBoostingDataEqual.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Simulation}
+\begin{figure}
+\includegraphics[width=1.7in]{../figures/treeBoostingDataEqual.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingUnprunedEqual.pdf} \\
+\includegraphics[width=1.7in]{../figures/treeBoostingStumpEqual.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteEqual5.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Increasing $M$ (train)}
+\begin{figure}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteTrainEqual2.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteTrainEqual5.pdf} \\
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteTrainEqual20.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteTrainEqual100.pdf}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Increasing $M$ (test)}
+\begin{figure}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteEqual2.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteEqual5.pdf} \\
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteEqual20.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteEqual100.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Simulation}
+Let's change the simulation so that the class probabilities aren't the same
+\begin{figure}
+\includegraphics[width=2.5in]{../figures/treeBoostingDataUnequal.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Simulation}
+\begin{figure}
+\includegraphics[width=1.7in]{../figures/treeBoostingDataUnequal.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingUnprunedUnequal.pdf} \\
+\includegraphics[width=1.7in]{../figures/treeBoostingStumpUnequal.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteUnequal5.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Increasing $M$ (train)}
+\begin{figure}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteTrainUnequal2.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteTrainUnequal5.pdf} \\
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteTrainUnequal20.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteTrainUnequal100.pdf}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Increasing $M$ (test)}
+\begin{figure}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteUnequal2.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteUnequal5.pdf} \\
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteUnequal20.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingDiscreteUnequal100.pdf}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost}
+This algorithm became known as `discrete AdaBoost'
+
+\vsp
+This is due to the base classifier returning a discrete label
+
+\vsp
+This was adapted to real-valued predictions in Real AdaBoost
+
+\script{In particular, probability estimates}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Real AdaBoost }
+\begin{enumerate}
+\item Initialize $w_i \equiv 1/n$
+\item For $m = 1,\ldots,M$
+\begin{enumerate}
+\item Fit the classifier on $\data$, weighted by $w_i$ and produce $p_m(x) = \hat{P}_w(Y = 1 | x)$
+\item Set $g_m(x) \leftarrow \textcolor<2>{redmain}{\frac{1}{2}\log( p_m/(1-p_m(x)))}$
+\item Set $w_i \leftarrow w_i\exp\{-Y_i g_m(X_i)\}$
+\end{enumerate}
+\item \smallCapGreen{Output:} $g(x) = \textrm{sgn}\left(\sum_{m=1}^M g_m(x)\right)$
+\end{enumerate}
+This is referred to as \alg{Real AdaBoost} and it used the class probability estimates to construct the
+contribution of the $m^{th}$ classifier, instead of the estimated label
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Real AdaBoost }
+\begin{enumerate}
+\item Initialize $w_i \equiv 1/n$
+\item For $m = 1,\ldots,M$
+\begin{enumerate}
+\item Fit the classifier on $\data$, weighted by $w_i$ and produce $p_m(x) = \hat{P}_w(Y = 1 | x)$
+\item Set $g_m(x) \leftarrow \alr{\frac{1}{2}\log( (p_m+\epsilon)/(1-p_m(x)+\epsilon))}$
+\item Set $w_i \leftarrow w_i\exp\{-Y_i g_m(X_i)\}$
+\end{enumerate}
+\item \smallCapGreen{Output:} $g(x) = \textrm{sgn}\left(\sum_{m=1}^M g_m(x)\right)$
+\end{enumerate}
+This is referred to as \alg{Real AdaBoost} and it used the class probability estimates to construct the
+contribution of the $m^{th}$ classifier, instead of the estimated label
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: Increasing $M$ (test)}
+\begin{figure}
+\includegraphics[width=1.7in]{../figures/treeBoostingRealEqual5.pdf} 
+\includegraphics[width=1.7in]{../figures/treeBoostingRealEqual20.pdf} \\
+\includegraphics[width=1.7in]{../figures/treeBoostingRealEqual1000.pdf}
+\includegraphics[width=1.7in]{../figures/treeBoostingRealEqual10000.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+\smallCapGreen{Question:} Why does this work?
+
+\vsp
+\smallCapGreen{One answer:} Boosting fits an additive model
+
+\[
+f(x) = \sum_{m=1}^M \beta_m \phi_m(x)
+\]
+\script{It took about 5 years for this realization to appear in the literature}
+\end{frame}
+
+\transitionSlide{Additive models}
+\begin{frame}[fragile]
+\frametitle{From linear to nonlinear models}
+\smallCapGreen{Goal:} Develop a prediction function $\hat{f}: \mathcal{X} \subset \R^p \rightarrow \R$
+for predicting $Y$ given an $X$
+
+\vsp
+Commonly, $\hat{f}(X) = X^{\top}\beta$ 
+
+\script{Constrained linear regression}
+
+\vsp
+This greatly simplifies algorithms, while not sacrificing too much flexibility (think kernel methods)
+
+\vsp
+However, sometimes directly modeling the nonlinearity is more natural
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{From linear to nonlinear models}
+Nonparametric methods form different types of local averages of the $Y$ values of points \alo{near} each other in $\mathcal{X}$
+
+\script{Here, the meaning of `near' gets specified by the method}
+
+\vsp
+This works great if $p$ is small (and the specification of nearness is good)
+
+\vsp
+However, as $p$ gets large
+\begin{itemize}
+\item \alo{nothing} is nearby
+\item \alo{all} points are on the boundary
+
+\script{Hence, predictions are generally extrapolations}
+\end{itemize}
+These features make up two components of the \alg{curse of dimensionality}
+
+\script{First usage: Bellman (1968) in the context of dynamic programming}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Curse of dimensionality}
+Fix the dimension $p$
+
+\script{Assume $p$ is even to ignore unimportant digressions}
+
+\vsp
+Let $S$ be a hypersphere with radius $r$
+
+\vsp
+Let $C$ be a hypercube with side length $2r$
+
+\vsp
+Then, the volume of $S$ and $C$ are, respectively
+\[
+V_S = \frac{r^{p}\pi^{p/2}}{(p/2)!} \textrm{ and } V_C = (2r)^p
+\]
+\script{Interesting observation: this means for $r < 1/2$ the volume of the hypercube 
+goes to 0, but the diagonal length is always
+$\propto\sqrt{p}$.  Hence, the hypercube gets quite `spiky' and is actually horribly jagged.  Regardless of radius, the
+hypersphere's volume goes to zero quickly.}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Curse of dimensionality}
+Hence, the ratio of the volumes of a circumscribed hypersphere by a hypercube is
+\[
+\frac{V_C}{V_S} =  \frac{(2r)^p\cdot (p/2)!}{r^{p}\pi^{p/2}} = \frac{2^p\cdot (p/2)!}{\pi^{p/2}}  = \left(\frac{4}{\pi}\right)^d d!
+\]
+where $d = p/2$
+
+\vsp
+\smallCapGreen{Observation:} This ratio of volumes is increasing \alo{really} fast.  This means that all of the volume
+of a hypersphere is near the corners.  Also, this is independent of the radius.
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Curse of dimensionality}
+This problem can be seen in the following table 
+
+\vsp
+The sample size required to ensure the MSE $\leq 0.1$ (at 0)
+when the density is a multivariate normal is computed
+
+\script{Silverman (1986). The method is \alg{kernel density estimation} with optimal bandwidth}
+
+\vsp
+\begin{tabular}{rr}
+Dimension & Sample Size \\
+\hline
+1 & 4 \\
+2 & 19 \\
+3 & 67 \\
+4 & 223 \\
+5 & 768 \\
+6 & 2790 \\
+7 & 10700 \\
+8 & 43700 \\
+9 & 187000 \\
+10 & 842000
+\end{tabular}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Curse of dimensionality}
+Using minimax theory, we can further see the effect of dimension $p$
+\[
+\inf_{\hat{f}} \sup_{f \in \Sigma_p(k,L)}\E \norm{\hat{f}(X) - f(X)}_2^2 \asymp n^{-2k/(2k+p)}
+\]
+\script{Here, $\Sigma_p(k,L)$ is the set of all functions whose $k^{th}$ order partial derivatives are all $L$ Lipchitz.  See 
+Gyorfi et al. (2002)}
+
+\vsp
+Let's invert this:
+\[
+n \geq (1/\delta)^{(2k + p)/2k}
+\]
+We need \alo{exponentially} more observations to achieve a given minimax error level $\delta$ 
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Additive models}
+We can find a combination of linear models and nonlinear models that provides flexibility
+while shielding us somewhat from the dimension problem
+
+\vsp
+Write
+\[
+f(x) = f_1(x_1) + \cdots + f_p(x_p) = \sum_{j=1}^p f_j(x_j)
+\]
+
+\vsp
+Estimation of such a function is not much more complicated than a fully linear model (as all inputs enter
+separately)
+
+\vsp
+The algorithmic approach is known as \alg{backfitting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Additive models (for regression)}
+Additive models are usually phrased using the \alo{population level} expectation
+
+\script{These get replaced with empirical versions}
+
+\vsp
+The update is a Gauss-Seidel-type update
+
+\script{The Gauss-Seidel method is an iterative scheme for solving linear, square systems}
+
+\vsp
+This is for $j=1,\ldots,p,1,\ldots,p,1\ldots$:
+\[
+f_j(x_j) \leftarrow \E(Y - \sum_{k\neq j} f_k(x_k)| x_j)
+\]
+
+\vsp
+Under fairly general conditions, this converges to the minimizer of $\E(Y - f(x))^2$
+
+\script{See Buja et al. (1989)}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Additive models (for regression)}
+Backfitting for additive models is roughly as follows:
+
+\vsp
+Choose a univariate nonparametric smoother $\mathcal{S}$ and form all marginal fits $\hat{f}_j$
+
+\script{Commonly a cubic smoothing spline with tuning parameter selected by GCV}
+
+\vsp
+Iterate over $j$ until convergence:
+\begin{enumerate}
+\item Define the residuals $R_i = Y_i - \sum_{k \neq j} \hat{f}_k(X_{ik})$
+\item Smooth the residuals $\hat{f}_j = \mathcal{S}(R)$
+\item Center $\hat{f}_j \leftarrow \hat{f}_j - \hat\P\hat{f}_j$
+\end{enumerate}
+Report
+\[
+\hat{f}(X) = \overline{Y} + \hat{f}_1(x_1)+\cdot+ \hat{f}_p(x_p)
+\]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Additive models (for regression)}
+More generally, we can consider each function in the sum to be a function of \alo{all} input variables
+
+\vsp
+These functions (now indexed by $m$) are usually phrased as a base function
+ $\phi_m(x) = \phi(x;\theta_m)$ and a multiplier $\beta_m$
+
+\vsp
+
+Backfitting translates to iterating over:
+\[
+\min_{\beta,\theta} \E\left[ Y - \sum_{k\neq m} \beta_k \phi(x;\theta_k) - \beta\phi(x,\theta)\right]^2
+\]
+\script{
+For most loss functions and basis function combinations minimizes jointly over \alo{all} parameters
+is impossible}
+
+\vsp
+Sometimes, even this is too burdensome, and is in need of a numerical \alo{approximation}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Additive models (for regression)}
+In analogy to forward stepwise regression, we can do the minimization in a \alo{greedy} fashion 
+
+\script{Remember: greedy means that at each step we don't revisit the fit from any previous step}
+
+\vsp
+This is done by sequential minimization: For $m =1 ,\ldots,M$
+%\[
+%(\beta_m,\theta_m) = \argmin_{\beta,\theta} \sum_{i=1}^n \ell(Y_i,f_{m-1}(X_i) + \beta b(X_i,\theta))
+%\]
+\[
+\beta_m,\theta_m = \argmin_{\beta,\theta} \E\left[ Y - F_{m-1}(x) - \beta\phi(x,\theta)\right]^2
+\]
+where $F_{m}(x) = \sum_{k=1}^{m-1} \beta_k \phi(x;\theta_k)$
+
+\vsp
+For squared error loss, this reduces to finding the best single term basis expansion of the residuals
+
+\script{This gives birth to the idea of \alo{least squares boosting}.  To bring this back to boosting, the $F_m$
+are known as the \alg{committee} and the $\beta\phi(x;\theta)$ is the weak learner}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Detour: Signal Processing}
+
+\vsp
+This is the approach used in some signal processing-type applications.  Mostly notably \alg{matching pursuit}
+
+\script{Mallat, Zhang (1993)}
+
+\vsp
+Matching pursuit forms an \alo{overcomplete dictionary} of bases (e.g. wavelets and Fourier) that make up the
+$\phi(x;\theta)$,
+
+\script{Here, $\theta$ indexes the scaling and location parameter modifying the mother wavelet and the frequency
+of the Fourier basis}
+
+\vsp
+The aforementioned \alg{basis pursuit} is the convex relaxation of this approach, which can provable \alo{exactly} recover
+a sparse signal from an overcomplete dictionary as long as the basis vectors are sufficiently incoherent 
+
+\script{Chen et al. (1998)}
+
+\script{incoherence can be thought of correlation} 
+
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{Additive models (for classification)}
+We learned from Bayes' theorem that all we need is the posterior class probabilities $\P(Y = j | X)$
+
+\vsp
+We could transfer all the above regression machinery across by noting that this is the Bayes' rule under squared
+error
+\[
+\E(\mathbf{1}(Y = j) | X) = \P(Y = j | X)
+\]
+and hence use regression methods for estimating the posterior class probabilities
+
+\vsp
+This works OK, but suffers from several problems, most notably the estimates aren't necessarily in $[0,1]$
+
+\script{A second, more subtle problem is called masking, which can occur when more than 2 classes are considered.  See
+Hastie et al. (1994) for details.}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Additive models (for classification)}
+As squared error loss isn't quite right for classification, \alg{additive logistic regression} is a popular approach
+\[
+\log \frac{\P(Y= 1| x)}{\P(Y = -1 | x)} = \sum_{j=1}^p f_j(x_j) = F(x)
+\]
+
+\vsp
+This gets inverted in the usual way to acquire a probability estimate
+\[
+p(x) = \P(Y = 1|x) = \frac{e^{F(x)}}{1 + e^{F(x)}}
+\]
+\script{$F(x) = x^{\top} \beta$ gives us (linear) logistic regression}
+
+\vsp
+These models are usually fit by numerically maximizing the binomial likelihood, and hence
+enjoy all the asymptotic optimality features of MLEs
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Additive models (for classification)}
+In linear GLMs, the MLEs are found via \alg{Fisher scoring}
+\vsp
+
+At its core, we are finding updates $\E[ \eta(X) + (Y-\mu)\frac{d\eta}{d\mu} | X]$
+
+\vsp
+Given estimates $\hat{\eta} =\hat\beta^{\top}X$ and $\hat\mu$, we form \alo{working responses}
+\[
+Z = \hat\eta + (Y - \hat\mu)\frac{d\eta}{d\mu}
+\]
+and observational weights
+\[
+W^{-1} = \left( \frac{d\eta}{d\mu}\right)^2\V Y|_{\mu = \hat\mu}
+\]
+\script{For logistic regression, $g(\mu) = \eta$, where $g$ is the logistic function}
+
+\vsp
+Iteratively regress $Z$ on $X$ with weights $W$, form $\hat\mu$, form $Z$,...
+
+\vsp
+This is continued until the \alo{deviance} doesn't change much
+\[
+\textrm{dev}(Y,\hat\mu) = 2[\log(Y) - \log(\hat\mu)]
+\]
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Additive models (for classification)}
+Using this approach, we can form a generalized version of back fitting called \alg{local scoring}
+
+\vsp
+It looks like
+\begin{enumerate}
+\item Start with guesses $f_1(x_1),\ldots,f_p(x_p)$, $F(x) = \sum_{j=1}^p f_j(x_j)$ and $p(x)$
+\item Form \alo{working responses}
+\[
+Z = F(x) + \frac{\mathbf{1}(Y = 1) - p(x)}{p(x)(1-p(x))}
+\]
+\item Apply back fitting to $Z$ with observational weights $p(x)(1-p(x))$ to produce $f_k(x_k)$
+
+\script{This is the data analogue to estimating $\E[ \eta(X) + (Y-\mu)\frac{d\eta}{d\mu} | X]$, constrained
+only to an additive model}
+
+\item Repeat until convergence
+\end{enumerate}
+\script{See Hastie, Tibshirani (1986) for details. Note that this insight produces the \alg{LogitBoost} algorithm.}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost interpretation}
+\smallCapGreen{Overall:} Both discrete and real AdaBoost can be interpreted as stage wise estimation procedures
+for fitting additive logistic regression models
+\vsp
+
+Rewriting forward stagewise  additive modeling:
+
+\script{Using a general likelihood $\ell$ and empirical expectation}
+
+\begin{enumerate}
+\item 
+
+$\beta_m,\theta_m = \argmin_{\beta,\theta}\sum_{i=1}^n\ell( Y_i, F_{m-1}(X_i) + \beta\phi(X_i,\theta))$
+
+\item Set $F_m(x) = F_{m-1}(x) + \beta_m \phi(x; \theta_m)$
+\end{enumerate}
+\vsp
+AdaBoost implicitly uses the \alo{loss function}
+\[
+\ell(Y,f(X)) = \exp\{-YF(X)\}
+\]
+and basis functions $\phi(x,\theta) = g_m(x)$
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+Suppose we minimize exponential loss in a forward stagewise manner
+
+\vsp
+Doing the forward selection for this loss, we get
+
+\begin{align*}
+(\beta_m,g_m) 
+& = \argmin_{\beta,g} \sum_{i=1}^n \exp\{-Y_i(F_{m-1}(X_i) + \beta g(X_i))\}\\
+\end{align*}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+Rewriting:
+\begin{align*}
+(\beta_m,g_m) 
+& = \argmin_{\beta,g} \sum_{i=1}^n \exp\{-Y_i(F_{m-1}(X_i) + \beta g(X_i))\}\\
+& = \argmin_{\beta,g} \sum_{i=1}^n  \alr{\exp\{-Y_iF_{m-1}(X_i)\}}\alb{\exp\{-Y_i\beta g(X_i))\} }\\
+& = \argmin_{\beta,g} \sum_{i=1}^n \alr{w_i} \alb{\exp\{-Y_i\beta g(X_i)\}}
+\end{align*}
+Where
+\begin{itemize}
+\item Define $\alr{w_i = \exp\{-Y_iF_{m-1}(X_i)\}}$ 
+
+\script{This is independent of $\beta,g$}
+\item  $\sum_{i=1}^n\alr{w_i}\alb{\exp\{ -Y_i\beta g_m(X_i))\}}$ needs to be optimized
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+Note that
+\begin{align*}
+\sum_{i=1}^n\alr{w_i}\alb{\exp\{ -\beta Y_ig(X_i))\}}
+& =
+e^{-\beta}\sum_{i:Y_i = g(X_i)} w_i + e^{\beta}\sum_{i:Y_i \neq g(X_i)} w_i \\
+& =
+(e^{\beta} - e^{-\beta}) \sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g(X_i))+ \\
+&\qquad + e^{-\beta} \sum_{i=1}^n w_i
+\end{align*}
+
+\vsp
+As long as $(e^{\beta} - e^{-\beta}) \geq 0$, we can find
+\[
+g_m = \argmin_g \sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g(X_i))
+\]
+\script{Note: If $(e^{\beta} - e^{-\beta}) < 0$, then $\beta < 0$.  However, as $\beta_m = \log((1-R_m)/R_m)$,
+this implies $R > 1/2$.  Hence, we would flip the labels and get $R \leq 1/2$.}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Reminder: AdaBoost}
+\begin{enumerate}
+\item Initialize $w_i \equiv 1/n$
+\item For $m = 1,\ldots,M$
+\begin{enumerate}
+\item \textcolor<1>{redmain}{Fit $g_m(x)$ on $\data$, weighted by $w_i$}
+
+\script{This step is finding the next best version of the classifier, trained on weighted data and
+added to the previous classifiers}
+\item Compute
+\[
+R_m = \frac{\sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g_m(X_i))}{\sum_{i=1}^n w_i}
+\]
+
+\item \textcolor<2>{redmain}{Find $\beta_m = \log((1-R_m)/R_m)$}
+\item Set $w_i \leftarrow w_i\exp\{\beta_m \mathbf{1}(Y_i \neq g_m(X_i))\}$
+\end{enumerate}
+\item \smallCapGreen{Output:} $g(x) = \textrm{sgn}\left(\sum_{m=1}^M \beta_m g_m(x)\right)$
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+\smallCapGreen{Goal:} Minimize
+\[
+\sum_{i=1}^nw_i\exp\{ -\beta Y_ig_m(X_i))\}
+\]
+
+\script{Here, we have fixed $g = g_m$}
+\vsp
+
+We showed this can be written
+\begin{align*}
+\sum_{i=1}^nw_i\exp\{ -\beta Y_ig_m(X_i))\}
+& = 
+(e^{\beta} - e^{-\beta}) R_mW+  e^{-\beta} W \parenthetical{\quad}{W = \sum w_i}
+\end{align*}
+Take derivative with respect to $\beta$
+\[
+(e^{\beta} + e^{-\beta}) R_mW-  e^{-\beta} W \stackrel{set}{=} 0 \stackrel{set}{=} e^{\beta} R_m + e^{-\beta}(R_m - 1)
+\]
+Solve for $\beta$ to find $\beta_m = 1/2\log[(1- R_m)/R_m]$
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Reminder: AdaBoost}
+\begin{enumerate}
+\item Initialize $w_i \equiv 1/n$
+\item For $m = 1,\ldots,M$
+\begin{enumerate}
+\item Fit $g_m(x)$ on $\data$, weighted by $w_i$
+
+\script{This step is finding the next best version of the classifier, trained on weighted data and
+added to the previous classifiers}
+\item Compute
+\[
+R_m = \frac{\sum_{i=1}^n w_i \mathbf{1}(Y_i \neq g_m(X_i))}{\sum_{i=1}^n w_i}
+\]
+
+\item \textcolor<1>{redmain}{Find $\beta_m = \log((1-R_m)/R_m)$}
+\item \textcolor<2>{redmain}{Set $w_i \leftarrow w_i\exp\{\beta_m \mathbf{1}(Y_i \neq g_m(X_i))\}$}
+\end{enumerate}
+\item \smallCapGreen{Output:} $g(x) = \textrm{sgn}\left(\sum_{m=1}^M \beta_m g_m(x)\right)$
+\end{enumerate}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost intuition}
+The approximation is updated
+\[
+F_m(x) = F_{m-1}(x) + \beta_mg_m(x)
+\]
+This causes the weights
+\[
+w_i^{(m+1)} = \exp\{-Y_iF_{m}(X_i)\} = w_i^{(m)} \exp\{-\beta_m Y_i g_m(X_i)\}
+\]
+Using $Y_ig_m(X_i)  = 2 \mathbf{1}(Y_i \neq g_m(X_i))  - 1$, this becomes
+\[
+w_i^{m+1} \propto w_i^m \exp\{\beta_m \mathbf{1}(Y_i \neq g_m(X_i))\}
+\]
+where $\beta_m \leftarrow 2\beta_m$, giving the last step of the algorithm
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{AdaBoost: The controversy}
+Many attempts to explain boosting have come and gone
+
+\vsp
+Each interpretation of boosting has provided insight, but ultimately cannot fully explain the empirical behavior
+
+\vsp
+We will cover some of these ideas here, with the accompanying rebuttle
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Exponential loss}
+Though the `exponential loss' was motivated by very different principles originally, the main attraction
+is that it leads to a simple reweighting as above
+
+\vsp
+However, it is interesting to ask about what it is estimating and how well?
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{An exponential criterion}
+Consider minimizing the criterion
+\[
+J(F) = \E[e^{-YF(x)}|x]
+\]
+\script{It is helpful to think of $\E$ as either the population level expectation, or the empirical expectation
+relative to a training sample, weighted by $w$.  I'll try and write $\E_w$ when referring to the later}
+\vsp
+
+For the population level expectation, the minimizer of $J(F)$ is the symmetric logistic transform of the posterior probabilities:
+
+\[
+F(x) = \frac{1}{2} \log \frac{\P(Y = 1 | x)}{\P(Y = -1 | x)}
+\]
+\script{Form $\E[e^{-YF(x)}] = \P(Y = 1 | x)e^{-F(x)} + \P(Y = -1 | x) e^{F(x)}$.  Take Frechet derivative with respect
+to $F$ and set equal to zero }
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{An exponential criterion}
+Therefore (after inverting)
+\begin{align*}
+& F(x) = \frac{1}{2} \log \frac{\P(Y = 1 | x)}{\P(Y = -1 | x)}  \\
+&\alr{\Downarrow }\\
+& \P(Y = 1 | x) = \frac{e^{F(x)}}{e^{-F(x)}+ e^{F(x)}} \quad \textrm{ and}\\
+& \P(Y = -1 | x) = \frac{e^{-F(x)}}{e^{-F(x)}+ e^{F(x)}} 
+\end{align*}
+\vsp
+
+\smallCapGreen{Conclusion:} Minimizing the exponential loss is equivalent (up to the 1/2 factor) to logistic regression.
+AdaBoost is estimating $1/2$ the (conditional) log-odds of $Y = 1$
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{An exponential criterion}
+Another loss with the same \alo{population} minimizer is the \alg{binomial (negative) log-likelihood}
+
+\vsp
+Define $\tilde{Y} = (Y+1)/2 \in \{0,1\}$.  Then 
+\[
+\ell(Y,p(x)) = \tilde{Y} \log p(x) + (1- \tilde{Y}) \log(1-p(x))
+\]
+Writing 
+\[
+p(x) = \P(Y = 1 | x) = \frac{e^{F(x)}}{e^{-F(x)}+ e^{F(x)}}  = \frac{1}{1+ e^{-2F(x)}} 
+\]
+and substituting, it shows that the deviance is
+\[
+-\ell(Y,F(x)) = \log(1 + e^{-2YF(x)})
+\]
+Hence, at a population level, the arg-minimizers are the same
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Other loss functions}
+\begin{figure}
+\centering
+\includegraphics[width=3in]{../figures/adaboostLoss}
+\end{figure}
+\script{Hastie et al (2009)}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{LogitBoost}
+\begin{enumerate}
+\item Initialize $w_i \equiv 1/n$ and probability estimates $p(X_i) = 1/2$
+\item For $m = 1,\ldots,M$
+\begin{enumerate}
+\item Compute the \alo{working response} and weights
+\[
+Z_i = \frac{\tilde{Y}_i - p(X_i)}{p(X_i)(1-p(X_i))}
+\]
+\[
+w_i = p(X_i)(1-p(X_i)
+\]
+\item Fit $f_m$ by weighted least squares of $Z_i$ on $X$ with $w_i$
+
+\script{This is the same as the local scoring step}
+\item Update $F(x) \leftarrow F(x) + 1/2f_m(x)$
+\item Update $p(x) \leftarrow e^{F(x)}/(e^{F(x)} + e^{-F(x)})$
+\end{enumerate}
+\item \smallCapGreen{Output:} $g(x) = \textrm{sgn}\left(\sum_{m=1}^M f_m(x)\right)$
+\end{enumerate}
+\script{Friedman, Hastie, Tibshirani (2000)}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: The controversy}
+\smallCapGreen{Claim:}  Boosting is another version of bagging
+
+\vsp
+The early versions of Boosting involved (weighted) resampling
+
+\vsp
+Therefore, it was initially speculated that a connection with \alo{bagging} explained its performance
+
+\vsp
+However, boosting continues to work well when
+\begin{itemize}
+\item The algorithm is trained on weighted data rather than on sampling with weights
+
+\script{This removes the randomization component that is essential to bagging}
+\item Weak learners are used that have high bias and low variance
+
+\script{This is the \alo{opposite}
+of what is prescribed for bagging}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: The controversy}
+\smallCapGreen{Claim:}  Boosting fits an adaptive additive model which explains its effectiveness
+
+\vsp
+The previous results appeared in Friedman et al. (2000) and claimed to have `solved' the mystery of boosting
+
+\vsp
+A crucial property of boosting is that is essentially never over fits
+
+\vsp
+However, the additive model view really should translate into intuition of `over fitting is a major concern,' as it is with
+additive models
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: The controversy}
+As adaBoost fits an additive model in the base classifier, it cannot have higher order interactions than the 
+base classifier
+
+\vsp
+For instance, a stump would provide a purely additive fit
+
+\script{It only splits on one variable.  In general, the complexity of a tree can be interpreted as the number of 
+included interactions}
+
+\vsp
+It stands to reason, then, if the Bayes' rule is additive in a similar fashion, stumps should perform well in Boosting
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: The controversy}
+Assume that 
+\[
+\P(Y = 1|x) = q + (1-2q) \mathbf{1}\left( \sum_{j=1}^J x_j > J/2 \right)
+\]
+\begin{figure}
+\centering
+\includegraphics[width=3in]{../figures/boostingStump}
+\caption{Black, bold line: Stumps.  Red, thin line: 8-node trees}
+\end{figure}
+\script{Mease, Wyner (2008)}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{AdaBoost: The controversy continues}
+Ultimately, interpretations are just modes of human comprehension
+
+\vsp
+The value of the insight is whether it provides fruitful thought about the idea
+
+\vsp
+From this perspective, AdaBoost fits an additive model.  
+
+\vsp
+However, many of the other connections are still of debatable value
+
+\script{For example, LogitBoost}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Next topic}
+Let $X_1,\ldots,X_n \sim \P$ such that $\P(\{0,1\}) = 1$ and $\theta = \P(X_1 = 1)$
+
+\vsp
+We know that $\hat\theta = \overline{X}$ is MLE, UMVUE, blah
+
+\vsp
+How good is it really?
+
+\vsp
+We know $\hat{\theta} \sim (\theta, \theta(1-\theta)/n)$ and
+\[
+\hat\theta \rightarrow \theta (a.s.)
+\]
+\[
+\sqrt{n}(\hat\theta - \theta) \rightarrow \textrm{ Normal}
+\]
+From this we can make confidence intervals 
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Next topic}
+It can be quite a bit more useful to have finite sample bounds for deviations from $\theta$
+
+\vsp
+A basic version of this is Ho\"efding's inequality: let $S_n = \sum_{i=1}^n X_i$
+
+\[
+\P( |S_n - n\theta| \geq t ) \leq Ce^{-ct^2}
+\]
+\script{$C,c$ are universal constants}
+
+\vsp
+Now, we know the distance to $\theta$ without any approximation..
+\end{frame}
+\end{document}

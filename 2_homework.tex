@@ -1,0 +1,72 @@
+\documentclass[11pt]{article}
+
+\usepackage{multicol}
+\usepackage{hypernat}
+
+\usepackage{_defsAndPackages675notation}
+
+\usepackage{amsthm,amssymb}
+
+% Bibliography 
+\bibliographystyle{plain}
+
+\usepackage{graphicx}
+\topmargin=0in
+\headheight=0in
+\headsep=0in
+
+\columnsep=-0.28in
+
+\oddsidemargin=0in
+\evensidemargin=0in
+
+\textheight=9in
+\textwidth=6.5in
+
+\footskip=0in
+
+\begin{document}
+
+\baselineskip=13.2pt
+\parindent=0pt
+\parskip=13.2pt
+\pagestyle{empty}
+
+\newcommand{\sd}{\textrm{sd}}
+
+\centerline{\bf \Large STAT675 -- Homework 2}
+\centerline{\bf \large Due: October 7} 
+\begin{enumerate}
+\item  Derive the lasso, ridge, and least squares solutions under orthogonal design and contrast them.
+\item Let
+\[
+\mathcal{T} = \left\{ \max_{1 \leq j \leq p} 2|\epsilon^{\top} x_j|/n \leq \lambda_0\right\}
+\]
+and assume $\X$ is standardized (that is,
+$\hat\Sigma = \X^{\top}\X/n$ has 1's on diagonal).  Show that
+if $\lambda_0 = 2\sigma\sqrt{(t^2 + 2\log p)/n}$ and $\epsilon \sim N(0,\sigma^2 I)$, then
+\[
+\P(\mathcal{T}) \geq 1 - 2 e^{-t^2/2}
+\]
+and hence that $\mathcal{T}$ is `large'
+
+\item
+Show that on $\mathcal{T}$ with $\lambda \geq 2\lambda_0$ and $S^* = \{ j : \beta_j^* \neq 0\}$
+\[
+2\norm{\X(\hat\beta - \beta^*)}_2^2/n + \lambda \norm{\hat{\beta}_{S_*^c}}_1
+\leq
+3\lambda \norm{\hat{\beta}_{S_*} - \beta_{S_*}^*}_1
+\]
+\item
+Suppose that the compatibility condition holds for $S_*$ with constant $\phi_*$.  Then on $\mathcal{T}$ and
+for $\lambda \geq 2 \lambda_0$
+\[
+n^{-1}\norm{\X(\hat\beta - \beta_*)}_2^2 + \lambda \norm{\hat\beta - \beta_*}_1 \leq 4 \lambda^2 \frac{|S_*|}{\phi_*}
+\]
+\item From the {\tt UCI} repository, use HARNESS to infer relevant predictors in the Wisconsin breast cancer
+data set: 
+
+{\tt http://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+\%28Prognostic\%29}
+\end{enumerate}
+\bibliography{references}
+\end{document}

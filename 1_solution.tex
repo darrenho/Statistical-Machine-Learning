@@ -1,0 +1,439 @@
+\documentclass[11pt]{article}
+
+\usepackage{multicol}
+\usepackage{hypernat}
+\usepackage{hyperref}
+
+\usepackage{scribeDefinitions}
+
+\usepackage{amsthm,amssymb}
+
+% Bibliography
+\bibliographystyle{plain}
+
+\usepackage{graphicx}
+\topmargin=0in
+\headheight=0in
+\headsep=0in
+
+\columnsep=-0.28in
+
+\oddsidemargin=0in
+\evensidemargin=0in
+
+\textheight=9in
+\textwidth=6.5in
+
+\footskip=0in
+
+\begin{document}
+
+\baselineskip=13.2pt
+\parindent=0pt
+\parskip=13.2pt
+\pagestyle{empty}
+
+\newcommand{\sd}{\textrm{sd}}
+
+\centerline{\bf \Large STAT675 -- Homework 1 (solutions)}
+\centerline{\bf \large Due: Sept. 11}
+\begin{enumerate}
+\item
+\begin{itemize}
+\item[a.] Show that the prediction (also known as generalization) squared-error risk can be written as
+\begin{equation}
+R(f) = \E_{X,Y} (f(X) - Y)^2 = \E_X (f(X) - \E[Y|X])^2 + \E_X[\V[Y|X]].
+\label{eq:bayes}
+\end{equation}
+\textbf{Solution [Aaron]\footnote{Names are given so that questions may be
+    addressed to the proper person.}:} \\
+\begin{equation*}
+\begin{split}
+R(f) & =  \E_{X,Y} (f(X) - Y)^2 \\
+& = \E_{X}\E_{Y|X}(f(X)-Y)^2 \\
+& = \E_{X}[f(X)^2 - 2f(X)E[Y|X] + E[Y^2|X]] \\
+& = \E_{X}[f(X)^2 - 2f(X)E[Y|X] + \V[Y|X] + E[Y|X]^2] \\
+& = \E_{X}[f(X)^2 - 2f(X)E[Y|X] + E[Y|X]^2] + \E_{X}[\V[Y|X]] \\
+& = \E_{X}[f(X) - E[Y|X]]^2 + \E_{X}[\V[Y|X]]
+\end{split}
+\end{equation*}
+\item[b.] What does this imply about the Bayes rule for squared error loss? \\
+\\
+\textbf{Solution [Aaron]:} \\
+The Bayes Rule with respect to the squared error loss function is the posterior mean. This can be seen as setting \(f_*(x)=E[Y|X]\) minimizes the risk function.
+%\item[c.] Use equation (\ref{eq:bayes}) to show the approximation/bias/variance(s) decomposition from lecture.
+\end{itemize}
+
+  \newpage
+\item Reminder from lecture: assume that we get a new draw of the training data,
+  $\data^0$, such that $\data \sim \data^0$ and
+  \[
+  \data = ((X_1,Y_1), \ldots, (X_n,Y_n)) \quad \textrm{and} \quad \data^0 =
+  ((X_1,Y_1^0), \ldots, (X_n,Y_n^0))
+  \]
+
+
+  If we make a small compromise to risk, we can form a sensible suite of risk
+  estimators.
+
+  To wit, letting $Y^0 = (Y_1^0,\ldots,Y_n^0)^{\top}$, define
+
+  \[
+  R_{in} = \E_{Y^0 | \data} \hat\P_{\data^0} \ell_{\hat{f}}= \frac{1}{n}
+  \sum_{i=1}^n \E_{Y^0 | \data} \ell(\hat{f}(X_i),Y_i^0).
+  \]
+
+
+  Then the average optimism is
+  \[
+  \opt = \E_Y [ R_{in} - \train]= \frac{2}{n} \sum_{i=1}^n \textrm{Cov}(\hat
+  f(X_i),Y_i).
+  \]
+
+
+  Therefore, we get the following estimate of risk
+  \[
+  \E_Y R_{in} = \E_Y \train + \frac{2}{n} \sum_{i=1}^n \textrm{Cov}(\hat
+  f(X_i),Y_i),
+  \]
+  which has unbiased estimator (i.e. $\E_Y \gic = \E_Y R_{in}$)
+  \[
+  \gic = \train + \frac{2}{n} \sum_{i=1}^n \textrm{Cov}(\hat f(X_i),Y_i).
+  \]
+  Our task now is to either estimate or compute $\opt$ to produce $\opthat$ and
+  form
+  \begin{equation}
+    \gichat = \train + \opthat.
+    \label{eq:gic}
+  \end{equation}
+  
+  %%%%%%%%%%% 
+  %% Aaron %%
+  %%%%%%%%%%% 
+\begin{itemize}
+\item[a.] \textbf{Stein's lemma:}
+\begin{itemize}
+\item[i.] Let $Z \sim N(0,1)$ and let $f: \R \rightarrow \R$ be absolutely continuous with derivative $f'$.  Then\footnote{Note:
+we may not return to this, but it turns out this is an if and only if statement}
+\[
+\E[Z f(Z)] = \E[f'(Z)]
+\]
+Show this is true. See \cite{stein1981estimation} for more details.
+\newpage
+\textbf{Solution [Aaron]:} \\
+Let \(\phi(z)\) be a standard normal density. \\
+Note: \(z\phi(z) = -\phi(z)\)
+\begin{equation*}
+\begin{split}
+E[f'(Z)] & = \int_{-\infty}^{\infty} f'(z) \phi(z) dz \\
+& = \int_0^{\infty} f'(z) \phi(z) dz + \int_{-\infty}^0 f'(z) \phi(z) dz \\
+& = \int_0^{\infty} f'(z) \int_z^{\infty} y \phi(y) dy dz - \int_{-\infty}^0 f'(z) \int_{-\infty}^z y \phi(y) dy dz \\
+& = \int_0^{\infty} \int_z^{\infty} f'(z) y \phi(y) dy dz - \int_{-\infty}^0 \int_{-\infty}^z f'(z) y \phi(y) dy dz \\
+& = \int_0^{\infty} \int_0^y f'(z) y \phi(y) dz dy - \int_{-\infty}^0 \int_y^{\infty} f'(z) y \phi(y) dz dy \\
+& = \int_0^{\infty} [f(y) -f(0)] y \phi(y) dy + \int_{-\infty}^0 [f(y) - f(0)] y \phi(y) dy\\
+& = \int_{-\infty}^{\infty} [f(y) - f(0)] y \phi(y) dy \\
+& = \E[Z(f(Z)-f(0))] \\
+& = \E[Z f(Z)]
+\end{split}
+\end{equation*}
+Integration can be interchanged in the above derivation by Fubini's Theorem and the absolute continuity of \(f\) \\
+
+\item[ii.] Extend this result to cover an arbitrary normal random variable $X \sim N(\mu,\sigma^2)$. \\
+\textbf{Solution [Aaron]:} \\
+Define a new function $h: \R \rightarrow \R$ by \(h(x) = g(\frac{x-\mu}{\sigma})\)
+\begin{equation*}
+\begin{split}
+E[h'(X)] & = \frac{1}{\sigma} \E[f'(\frac{X-\mu}{\sigma})] \\
+& = \frac{1}{\sigma} \E[f'(Z)] \\
+& = \frac{1}{\sigma} \E[Zf(Z)] \\
+& = \frac{1}{\sigma} \E[(\frac{X-\mu}{\sigma}) f(\frac{X-\mu}{\sigma})] \\
+& = \E[(\frac{X-\mu}{\sigma^2})h(X)]
+\end{split}
+\end{equation*}
+
+%%%%%%%%%
+%% Ben %%
+%%%%%%%%%
+
+\item[iii.]  
+  Suppose\footnote{This notation means $Y$ has mean $\mu$ and
+    variance $\sigma^2I$.}  $Y \sim (\mu,\sigma^2I) \in \R^n$ and let $f: \R^n
+  \rightarrow \R^n$.  Show that the expected training error can be decomposed
+  as
+  \[
+  \E||\mu - f(y)||_2^2 = -n\sigma^2 + \E||y - f(y)||_2^2 + 2 \sum_{i=1}^n
+  Cov(Y_i,f_i(Y)).
+  \]
+
+  \textbf{Solution [Ben]:}
+  \begin{flalign*}
+    \E||\mu - f(y)||_2^2 &= E||\mu - y||_2^2 - 2 E<\mu - y, f(y)-y> + \E||f(y)-y||_2^2 &\\
+    &= (I)+(II)+(III)
+  \end{flalign*}
+  
+  \begin{flalign*}
+    (I) &= \E[\mu-y]^T\E[\mu-y]+tr(cov(\mu-y)) &\\
+    &=tr(cov(\mu-y))\\
+    &=n\sigma^{2}
+  \end{flalign*}
+  
+  \begin{flalign*}
+    (II) &= -2 (\E<\mu-y,f(y)-\E[f(y)]> + \E<\mu-y, \E[f(y)]-y>) & \\
+    &= 2\sum_{i=1}^n Cov(Y_i,f_i(Y)) -2(\E[(\mu-y)]^T\E[f(y)] + \E[<\mu-y,y>])\\
+    &= 2\sum_{i=1}^n Cov(Y_i,f_i(Y)) -2\E[<\mu-y,y>]\\
+    &=2\sum_{i=1}^n Cov(Y_i,f_i(Y)) +2\mu^T\mu-2\E[y^Ty]\\
+    &=2\sum_{i=1}^n Cov(Y_i,f_i(Y)) +2\mu^T\mu-2(\mu^T\mu+n\sigma^2)\\
+    &=2\sum_{i=1}^n Cov(Y_i,f_i(Y)) -2n\sigma^{2}
+  \end{flalign*}
+  
+  Summing (I), (II), and (III) yields the desired decomposition
+
+  
+\item[iv.] It is possible to show that for each $i = 1,\ldots,n$, as long as
+  $f_i$ is almost differentiable, then if $X \sim N(\mu,\sigma^2I)$,
+  \[
+  \frac{1}{\sigma^2} \E[(X-\mu)f_i(X)] = \E[\nabla f_i(X)],
+  \]
+  where $\nabla f_i(X)$ is the gradient of the $i^{th}$ component of $f$
+  evaluated at $X$.  Use this fact (which is a multivariate extension of i.)
+  to get an unbiased estimator of the risk.  This is known as Stein's Unbiased
+  Risk Estimator (SURE).  It is a generalization of Mallow's Cp.  Note that
+  $\sum_{i=1}^n \frac{\partial f_i}{\partial x_i}(x)$ is known as the
+  divergence of $f$.
+
+  \textbf{Solution [Ben]:}
+
+  First, we note that 
+  \[
+  \frac{1}{\sigma^2} \E[(X-\mu)f_i(X)] = \E[\nabla f_i(X)] \forall i \in  1,..,n
+  \]
+  
+  implies that 
+  \begin{equation}\label{eq:1}
+    \frac{1}{\sigma^2}cov(X,f(X))=\E[\nabla f_1(X) \nabla f_2(X) ... \nabla f_n(X) ]. 
+  \end{equation}
+   
+  
+  Now, from 2.a.iii, we have that
+  
+  \begin{align*}
+    \frac{trace(cov(X,f(X)))}{\sigma^2}&=\frac{Risk+n\sigma^2-\E||X-f(X)||_2^2}{2\sigma^2},
+  \end{align*}
+  
+  Thus, from (\ref{eq:1}),
+  
+  \begin{equation*}
+    trace(\E[\nabla f_1(X) \nabla f_2(X) ... \nabla f_n(X) ])=\frac{Risk+n\sigma^2-\E||X-f(X)||_2^2}{2\sigma^2}.
+  \end{equation*}
+  
+  
+  Rearranging this equality, we see that 
+  \begin{align*}
+    Risk&=2\sigma^2trace(\E[\nabla f_1(X) \nabla f_2(X) ... \nabla f_n(X)])-n\sigma^2+\E||X-f(X)||_2^2\\
+    &=2\sigma^2\E[trace([\nabla f_1(X) \nabla f_2(X) ... \nabla f_n(X)])-n\sigma^2+\E||X-f(X)||_2^2\\
+    &=\E[2\sigma^2\sum_{i=1}^n \frac{\partial f_i}{\partial x_i} -n\sigma^2+||X-f(X)||_2^2]
+  \end{align*}.
+  
+  Thus, 
+    
+  \begin{equation*}
+    2\sigma^2\sum_{i=1}^n \frac{\partial f_i}{\partial x_i} -n\sigma^2+||X-f(X)||_2^2
+  \end{equation*}
+  
+  
+  is an unbiased estimator of the risk. 
+  
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%% 
+%% HENRY'S SECTION %%
+%%%%%%%%%%%%%%%%%%%%%
+  \item[b.] \textbf{Stein's paradox.}  We will use Stein's lemma to show that
+    the usual maximum likelihood estimator $X$ for estimating $\mu$ in $X
+    \sim \mathcal{N}(\mu,\sigma^2I) \in \R^n$ is inadmissible\footnote{A numerical
+      exploration of how this and how it applies to two other distributions
+      under a certain class of loss functions can be had here:
+      https://fairyaunts.shinyapps.io/steins\_paradox/.}  when $n \geq 3$.  It
+    turns out that
+    \[
+    \hat\mu = \left(1 - \frac{(d - 2)\sigma^2}{||X||_2^2}\right) X
+    \]
+    uniformly dominates $X$.  See \cite{Stein1956Inadmissibility} for the
+    original paper and \cite{efron1977stein} for a nontechnical discussion of
+    this point.\\
+    \textbf{Solution (i. - iii.) [Henry]:}
+    \begin{itemize}
+    \item[i.] The risk of $X$ as an estimator of $\mu$ is
+      \begin{align*}
+        R(X) & = \E||X - \mu||^2_2\\
+             & = \sum_{i = 1}^d \E(X_i - \mu_i)^2\\
+             & = d\sigma^2.
+      \end{align*}
+    \item[ii.] The SURE of $\hat\mu$ involves the training error
+      \begin{align*}
+        ||X - \hat{\mu}||^2_2 & = ||X -
+        \left(1 - \frac{(d - 2)\sigma^2}{||X||_2^2}\right) X||^2_2 \\
+        & = ||\frac{(d - 2)\sigma^2}{||X||_2^2} X||^2_2 \\
+        & = \frac{(d - 2)^2\sigma^4}{||X||^4_2}||X||_2^2\\
+        & = \frac{(d - 2)^2\sigma^4}{||X||_2^2}
+      \end{align*}
+      and the divergence of the estimator
+      \begin{align*}
+        \nabla\hat{\mu} & = \sum_{i = 1}^d \frac{\partial}{\partial x_i}
+        \left(1 - \frac{(d - 2)\sigma^2}{||X||_2^2}\right) x_i \\
+        & = \sum_{i = 1}^d \left(1 - \frac{(d - 2)\sigma^2}{||X||_2^2}\right)
+        + \frac{(d - 2)\sigma^2}{||X||^4_2}(-1)(2x_i)x_i\\
+        & = d - \frac{d(d - 2)\sigma^2}{||X||^2_2}
+        + 2\frac{(d - 2)\sigma^2||X||_2^2}{||X||_2^4} \\
+        & = d - \frac{(d - 2)^2\sigma^2}{||X||_2^2}.
+      \end{align*}
+      Using the result from 2a.iv. gives
+      \begin{align*}
+        SURE(\hat{\mu}) & = -d\sigma^2 + \frac{(d - 2)^2\sigma^4}{||X||_2^2}
+        + 2d\sigma^2 - 2\frac{(d - 2)^2\sigma^4}{||X||_2^2}\\
+        & = d\sigma^2 - \frac{(d - 2)^2\sigma^4}{||X||_2^2}.
+      \end{align*}
+    \item[iii.]
+      The expected value of this risk estimate is
+      \begin{align*}
+        \E\left[SURE(\hat{\mu})\right] & = d\sigma^2
+        - (d - 2)^2\sigma^4\E\left[\frac{1}{||X||_2^2}\right]
+      \end{align*}
+      which we can bound from above using Jensen's inequality:
+      \begin{align*}
+        & \leq d\sigma^2
+        - (d - 2)^2\sigma^4\frac{1}{\E||X||_2^2}\\
+        & = d\sigma^2 - \frac{(d - 2)^2 \sigma^2}{d}
+      \end{align*}
+      For all $d > 2, \sigma > 0$ the second term will be strictly positive, and so
+      \begin{align*}
+        \E\left[SURE(\hat{\mu})\right] &< d\sigma^2 = \E\left[X\right]
+      \end{align*}
+      for all $\mu$, which proves the inadmissibility of $X$ as an estimator for
+      $\mu$.
+    \end{itemize}
+%%%%%%%%%%%%%%%
+%% END HENRY %%
+%%%%%%%%%%%%%%%
+
+  \item[c.] \textbf{Degrees of freedom.}  Inline with the definitions above, let
+    $Y_1,\ldots,Y_n$ be such that $\V Y_i = \sigma^2$ and $Cov(Y_i,Y_{i'}) =
+    \sigma^2 \delta_{i,i'}$ (the Kronecker delta function).  Let $g: \R^n
+    \rightarrow \R^n$ be a function that gives be fitted values, ie:
+    $g(Y_1,\ldots,Y_n) = \hat{Y} \in \R^n$.  Then
+    \[
+    \df(g) = \frac{1}{\sigma^2} \sum_{i=1}^n Cov(Y_i,g_i(Y)) = \frac{1}{\sigma^2}
+    \tr( Cov(Y,g(Y))).
+    \]
+    Therefore, we can use our results from the previous sections to calculate
+    degrees of freedom for various fitting procedures.  Let's do that for
+    \begin{itemize}
+    \item[i.] Ridge regression
+
+      \textbf{Solution [Ben]:}
+      \begin{equation*}
+        \hat{{\beta}}_{ridge}=(X^TX+\lambda I)^{-1}X^TY
+      \end{equation*}
+      
+      thus, 
+      \begin{equation*}
+        g(Y)=X(X^TX+\lambda I)^{-1}X^TY
+      \end{equation*}
+      and 
+      \begin{align*}
+        df(g)=&(1/\sigma^2)trace(cov(Y,X(X^TX+\lambda I)^{-1}X^TY))\\
+        &=(1/\sigma^2)trace(cov(Y,X(X^TX+\lambda I)^{-1}X^TY))\\
+        &=(1/\sigma^2)trace(cov(Y,Y)X(X^TX+\lambda I)^{-1}X^T)\\
+        &=trace(X(X^TX+\lambda I)^{-1}X^T). 
+      \end{align*}
+
+    \item[ii.] For lasso, I don't want you to derive the degrees of freedom.
+      Instead, look over \cite{tibshirani2012degrees} and see if you can
+      following the general flow of the argument, at least up to the end of
+      section 2.1.  Give an overview of the argument here.
+    \end{itemize}
+    
+%%%%%%%%%
+%% Ben %%
+%%%%%%%%%
+    \textbf{Solution [Ben]:}
+
+    By Stein's lemma, if Y is Normal and our fitting procedure g(Y) is almost
+    differentiable then $\sum_{i=1}^n \frac{\partial f_i}{\partial y_i}$ is an
+    unbiased estimate of the degrees of freedom of g(Y). The paper first
+    justifies that the lasso fit is indeed almost differentiable using the
+    geometry of complex polyhedrons- specifically the lasso fit is almost
+    differentiable due to it being the residual of the projection onto a complex
+    polyhedron. Then, the author states the lasso problem in terms of the active
+    set of the lasso solution (the active set is the set of indeces of the
+    variables whose beta coefficients are not set to zero for a particular lasso
+    solution). Although the active set of a solution is not unique, since the
+    lasso solution itself is not unique, the author shows that the column space
+    of the active x variables is unique, and further, that the divergence of the
+    lasso fit is a function of this column space, making the lasso degrees of
+    freedom problem well defined. The divergence is shown to be the rank of the
+    matrix of active x variables, and so the expectation of this rank over the
+    domain of Y is the degrees of freedom for the lasso problem.
+
+
+%%%%%%%%%%%%%%%%%%%%%
+%% HENRY'S SECTION %%
+%%%%%%%%%%%%%%%%%%%%%
+  \item[d.]  \textbf{Generalized information criterion (GIC).}  The original
+    proposed GIC was in \cite{nishii1984asymptotic} and had the following form.
+    Assume $Y_i = X_i^{\top} \beta_* + \epsilon_i$, where $\epsilon_i
+    \stackrel{i.i.d}{\sim} N(0,\sigma^2)$.  The main goal was model selection,
+    so let $\alpha \in A = \{ \textrm{candidate models} \}$, where this could be
+    all $2^p - 1$ models from $p$ covariates for instance.  Then
+    \[
+    \textrm{GIC}_0(\alpha) = \log(\hat\sigma_{\alpha}^2) + \frac{1}{n} \kappa_n
+    d_{\alpha},
+    \]
+    where $\hat\sigma_{\alpha}^2$ is the MLE under model $\alpha$, $(\kappa_n)$
+    is a sequence of numbers, and $d_{\alpha}$ is the degrees of freedom from
+    model $\alpha$.  Choosing $\kappa_n = 2$ produces AIC, $\kappa = \log(n)$
+    produces BIC.
+    \begin{itemize}
+    \item[i.]  \textbf{Solution [Henry]:} These choices work when $n >> p$. However,
+      when $n \leq p$, this doesn't work at all because the MLE
+      $\hat\sigma_{\alpha}^2$ will be zero. This is because the orthogonal
+      complement of $\mathbb{X}$ is empty. We won't be able to estimate
+      $\sigma^2$ because we will have projected $Y$ into a larger space. In this
+      case, the criterion doesn't help us at all. We will always choose the
+      model with all parameters included.
+    \item[ii.] Instead, we use equation (\ref{eq:gic}), with $\opthat =
+      \hat\sigma^2 \kappa_n d_{\alpha}/n$ and $\hat\sigma^2$ is an estimator of
+      the variance (see \cite{zhang2010regularization} (NOTE: I think Darren
+      actually means this reference: \cite{reid2013study})) for more
+      information).  Just use the true variance for $\hat\sigma^2$ right now,
+      but know that this is still a very open, interesting area of research (see
+      \cite{reid2013study} for a review).  Note that $\kappa_n = 2$ corresponds
+      to AIC with Gaussian errors, but assuming that the variance is known.
+
+      Using the simulation in {\tt 1\_simulation.tar}, compare the prediction risk
+      for
+      \begin{itemize}
+      \item[iia.]  \textbf{Solution (It should probably be noted here that it
+          was Henry's job to do this...):} It appears to the author that
+        involved modification is required to use this code to simulate
+        prediction risk for Ridge regression, since it is built for Lasso.
+      \item[iib.]  \textbf{Solution (This incomplete solution is also Henry's
+          fault):} Results for CV, AIC, and BIC are shown in the accompanying
+        manuscript, ``manuscriptInfoCriteriaSimulation.pdf''. If one wished to
+        investigate CCV as well, the necessary code already exists in
+        `\verb=1resultsF.R='. To get at it, one would need to re-run at least a
+        portion of the simulation, but could then use the provided ploting code
+        to make additional violin plots. Sadly, the author himself was unable to
+        overcome errors associated with the parallelization aspects of the code,
+        and so generated no such violin plots. He wishes all other lots of luck,
+        and is happy to share what he's learned, however incomplete.
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+%%%%%%%%%%%%%%%
+%% END HENRY %%
+%%%%%%%%%%%%%%%
+
+\end{enumerate}
+\bibliography{references}
+\end{document}

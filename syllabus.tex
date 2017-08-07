@@ -1,0 +1,218 @@
+\documentclass[11pt]{article}
+\usepackage{multicol}
+\usepackage{_defsAndPackages675notation}
+\usepackage{amsthm,amssymb}
+
+\topmargin=0in
+\headheight=0in
+\headsep=0in
+
+\columnsep=-0.28in
+
+\oddsidemargin=0in
+\evensidemargin=0in
+
+\textheight=9in
+\textwidth=6.5in
+
+\footskip=0in
+
+\begin{document}
+
+\baselineskip=13.2pt
+\parindent=0pt
+\parskip=13.2pt
+\pagestyle{empty}
+
+\centerline{\bf \Large STAT 675 -- Statistical Machine Learning -- Fall 2014}
+
+\begin{center}
+\begin{tabular}[h]{llll}
+\hline
+\hline
+\\
+\multicolumn{4}{c}{\Large \bf Instructor} \\ 
+\\
+  & Office & Email & Office Hours \\
+Darren Homrighausen~~~~~\,& Stat 204 & {\tt darrenho@stat.colostate.edu} & W 11:00 AM (or Appointment) \\
+%&&&  or by Appointment \\
+\\
+%\multicolumn{4}{l}{All office hours will be held in the UC, 2nd floor of the atrium,
+%i.e., above the big-screen TV.} \\
+%\\
+\hline
+\hline
+\end{tabular}
+
+\begin{tabular}{lclrcrrr}
+{\bf Lecture} & TR & 2:00 PM & -- & 3:15 PM & Statistics 006 \\
+\\
+{\bf Required Text} & \multicolumn{7}{l}{None (See first lecture for recommended texts)}  \\
+\\
+{\bf Web Site} & \multicolumn{7}{l}{{\tt Blackboard }} \\ %www.stat.colostate.edu/$\sim$darrenho/SML
+\\
+{\bf Prerequisites} & \multicolumn{7}{l}{No formal prerequisites.  See summary below for expectations.} \\
+\\
+{\bf Expectations} & \multicolumn{7}{l}{As this is a 3 credit class, there is a CSU expectation that you spend 6 hours} \\
+                              & \multicolumn{7}{l}{outside class on homeworks and review each week.} \\
+\\
+\hline
+\hline
+\end{tabular}
+\end{center}
+
+
+%In the classical regime, data sets may have a lot of observations ($n$), but the number ($p$)
+%of {\it covariates} or {\it features} was small.  However, there is an increasing
+%emphasis on analyzing  {\it high-dimensional} data sets that have $p$ comparable $n$ and often
+%exceeding it.  
+
+Upon completing this course, you should be able to tackle modern data analysis problems
+by: (1) selecting the appropriate methods and justifying your choices; (2) implementing
+these methods programmatically (using, say, the R programming language) and evaluating
+your results; (3) having some basis theoretical tools to understand the properties of modern 
+machine learning methods and statistical machine learning techniques.
+
+
+\vspace{.5in}
+%\vfill\eject
+
+\newpage
+
+\centerline{{\bf \Large Administrative Remarks}}
+
+\vskip 13.2pt
+\centerline{{\it Honor Pledge}} This class operates under the tenets of the CSU honor pledge:
+{\it I will not give, receive, or use any unauthorized assistance.}
+
+\vskip 13.2pt
+\centerline{{\it Lectures}}
+\noindent{\bf Attendance.}  Attendance is mandatory.  You can do it.
+
+\vskip 13.2pt
+
+\centerline{{\it Software}}
+
+\noindent{\bf R.}
+In this class you will be provided the opportunity to work with
+{\tt R}; a widely used statistical computing platform.  It is free,
+moderately well documented, and has a vast user community
+(download it from {\tt www.r-project.org}).
+
+\vskip 13.2pt
+
+\centerline{{\it Evaluation}}
+
+\noindent{\bf Scribe duties.} Every lecture, one person will be elected as scribe.  This person's job will be to write up
+(using a \LaTeX{} template I will provide) the day's lecture.  There will be topics that I didn't go into much detail
+in the lecture but I think would be useful to have more exposition on.  These topics will be notated as e.g.
+\[
+\textrm{and $\X^{\dagger}$ is the Moore-Penrose pseudo inverse\Note}
+\]
+The scribe will do the necessary research to provide at least definitions about these concepts and
+ideally some useful, related results.  Continuing this example, we might state the four conditions on the pseudo
+inverse that make it a Moore-penrose, how to produce it via an SVD, and maybe how it can be used to construct
+a projection (ie: $\X \X^{\dagger}$).
+
+The goals of the scribe duties are that it will...
+\begin{itemize}
+\item encourage critical thinking of the lecture materials
+\item produce a nice set of notes for us all to have for reference
+\item provide useful \LaTeX{} practice
+\item give me some sense of how well the material is being understood
+\item provide incentive to collaborate with your fellow students to fill in gaps in your notes/knowledge.
+\end{itemize}
+
+\noindent{\bf Homeworks.} There will be periodic homeworks that build on topics from lecture.  These homeworks
+will not be formally graded.  However, I'd like to produce nice solutions for each problem.  Hence, I will be collecting
+nicely typeset (ie: \LaTeX{}) solutions using a template I provide. I will randomly assign groups of three people to homework teams.  
+
+\noindent{\bf Presentations.} During the semester, there will (hopefully) be topics that arise that you find extraordinarily 
+interesting.  I want each person to give two very short ($\leq 10$ minutes) presentations over the course of the semester.
+These talks can be informal and can be on anything related to lectures or homeworks.  Possible topics could be a proof
+of a result I mention, additional properties of an introduced concept, or some data analysis results using the methods from the class.
+%\centerline{{\it Homework and Tests}}
+%
+%\noindent{\bf Homework.}  
+%There will be approximately 7 homework assignments.
+%{\it Homework assignments that are turned in late will be assessed a 30\% penalty, 
+%regardless of the reason they are late! No homeworks will be accepted more than 48 hours after the due date/time.}  
+%Feel free to discuss homework assignments with others, but realize that
+%the work you hand in must be your own.
+%  \textbf{VERY, VERY IMPORTANT:} For your submitted homeworks, you will be submitting code,
+%output, and plots.  Your code must be neat and readable.  Only include output that is directly related to the question you are answering.
+%Plots must be labelled (x-axis, y-axis, and title).  Any deviations from this protocal may result in a deduction in points.
+%
+%\noindent{\bf Tests.}  There will be an in class midterm the last class before Spring Break.  The specifics of the test, such 
+%as topics and permitted materials, will be discussed at a later time.
+%
+%\noindent{\bf Final Policy.} Instead of a final, we will have a final project, the details of which will be determined during the 
+%semester.  Each project will be presented in-class May $8^{th}$ and May $10^{th}$ .
+
+\noindent{\bf Exams.} There will be no exams.
+\vskip 13.2pt
+\centerline{{\it Miscellaneous}}
+\noindent{\bf Disability Resources.}
+If you require a special accommodation, such as needing
+more time to finish exams, contact me \textbf{and} disability services.
+
+%\noindent{\bf Email.}  When sending email, please put ``STAT460" 
+%at the beginning of the subject line so that I know the message
+%is not spam.  
+
+\newpage
+
+
+
+\begin{table}[!h]
+\begin{tabular}{lp{6in}}
+\multicolumn{2}{c}{{\bf \Large Class Topics}} \\
+\hline
+\hline
+                          & Applied Topics \\
+\hline
+\\
+ &   \textbf{Preliminary materials} \\
+ &   \textbf{Linear regression methods:}  \\
+           & i. Model selection \\
+           & ii. Regularization \\
+           & iii. Squared-error risk estimation \\
+           & iv. Compressed sensing \\`
+           & v. Sparse additive models \\
+ &   \textbf{Classification:}  \\
+           & i. Discriminant analysis \\
+           & ii. Support vector machines \\
+           & iii. Kernel methods (Mercer kernels, Reproducing Kernel Hilbert Spaces)\\
+           & iv. Tree methods (along with boosting/bagging/bootstrap)\\
+           & v. Neural networks \\
+          &  {\scriptsize (Note: In most cases, methods can be used for either classification or regression with minor
+                         changes)}\\
+ &  \textbf{Dimension reduction:}  \\
+           & i. Principal Components \\
+           & ii. Nonlinear embeddings \\ 
+ &   \textbf{Clustering:} \\
+           & i. $K$-means \\
+           & ii. Hierarchical clustering \\           
+\hline
+                          & Theoretical Topics \\           
+\hline                          
+ &  \textbf{Concentration of measure:} \\
+           & i. Moment Bounds versus MGF bounds. Hoefdings, McDiarmid, Nemirovski, (generic) chaining \\
+           & ii. Empirical processes \\
+           & iii. Covering numbers \\
+           & iv. VC dimension \\
+ &   \textbf{Minimax bounds:} \\
+          & i. Function spaces and information theory \\
+          & II. Normal means  \\
+           & iii. Upper bounds \\
+           & iv. Lower bounds \\
+\\
+\textbf{Note:} & This is a rough overview of possible topics, not a schedule. 
+The order of the topics, or even whether they will be included at
+all, is subject to change.
+\end{tabular}
+\end{table}
+
+
+
+\end{document}

@@ -1,0 +1,305 @@
+\documentclass[10pt]{article}
+\usepackage{scribeDefinitions}
+\usepackage{enumerate}
+\usepackage{mathtools}
+\usepackage{qtree}
+
+% To be entered
+\newcommand{\lecture}{Prof.\ Homrighausen}
+\newcommand{\scribe}{Zach Weller}
+\newcommand{\chtitle}{Cross-Validation \& Model Selection}
+\newcommand{\lecdate}{Sept. 2, 2014}
+
+
+\begin{document}
+\rule{6.5in}{1pt}
+
+\textsc{SML
+  \hfill  Lec 3 --- \chtitle
+  \hfill \lecdate}
+
+\textsc{Lecturer: \lecture \hfill Scribe: \scribe}
+\rule{6.5in}{1pt}
+
+\section{Cross Validation (CV)}
+
+Recall, we are attempting to get at an estimator of risk, $R(f) = $ Bias + Variance.
+
+	\subsection{Leave-one-out CV}
+		Intuitive idea: set aside one observation and predict it, 
+		
+		\begin{example} Set aside $(X_1, Y_1)$, estimate $\hat{f}^{(1)}$with the remaining $n - 1$ observations, and predict $Y_1$. We can then compute $R_1(\hat{f}^{(1)}) = [ Y_1 - \hat{f}^{(1)}(X_1)]^2$. 	
+		Note: $\hat{f}^{(1)}$ symbolizes leaving out the first observation before fitting $\hat{f}$
+		\end{example}
+	
+	Since the left off data point is \underline{independent} of the data points used to fit $f$, 
+	\begin{equation}
+		\E_{(X_1,Y_1)|\data_{(1)}}R_1(\hat{f}^{(1)}) \,{\buildrel D \over =}\, R(\hat{f}(\data_{n-1})) \approx R(\hat{f}(\data))
+	\end{equation}
+	
+	Iterating over all observations and taking the average produces \underline{\textbf{leave-one-out CV}}:
+	
+		\begin{equation}
+			CV_{n}(\hat{f}) = \frac{1}{n} \sum_{i=1}^{n} R_i(\hat{f}^{(i)}) = \frac{1}{n} \sum_{i=1}^{n}  [ Y_i - \hat{f}^{(i)}(X_i)]^2
+		\end{equation}
+		
+		
+		
+	\subsection{More general CV schemes}
+	Let $\mathcal{N} = \{1,\ldots, n\}$ be the index set for the data, $\data$. Define a distribution $\VV$ over $\mathcal{N}$ with (random) variable $v$. Then, we can perform a general \underline{cross-validation} estimator as
+	
+	\begin{equation}
+		\CVV(\hat{f}) = \E_{\VV}\hat{\P}_{v}\ell_{\hat{f}(v)}
+	\end{equation}
+	
+	\textbf{Examples:}
+	
+		\begin{itemize}
+			\item K-fold: fix $V = \{ v_1, \ldoes, v_k \}$ such that $\v_k \cap \v_j = \emptyset$ and $\cup_j v_j = \mathcal{N}$. Then \underline{\textbf{K-fold CV estimator}} is given as:
+			
+				\begin{equation}
+					CV_K(\hat{f}) = \frac{1}{K} \sum_{v \in V} \frac{1}{|v|} \sum_{i \in v} (Y_i - \hat{f}^{(v)}(X_i))^2
+				\end{equation}
+				
+			\item Bootstrap: let $\mathcal{V}$ be given by the bootstrap distribution over $\mathcal{N}$ (i.e. sample with replacement many times).
+			\item Factorial: let $\mathcal{V}$ be given by all subsets (or a subset of all subsets) of $\mathcal{N}$ (putting mass of $1/(2^n - 2)$ on each subset)
+		\end{itemize}
+	
+	\subsection{Comparison of CV schemes}
+		\begin{itemize}
+			\item $CV_k$ gets more computationally demanding as $K \rightarrow n$.
+			\item The bias of $CV_k$ goes down, but the variance increases as $K \rightarrow n$.
+			\item Factorial version isn't commonly used (except when doing a 'real' data example for paper)
+			\item Many other flavors of CV (e.g. ``consistent cross validation": see homework)
+		\end{itemize}
+
+\section{Brief Summary}
+
+	\subsection{Risk Estimation Methods: chosen based on the application}
+		\begin{itemize}
+			\item CV
+			\item AIC
+			\item BIC
+		\end{itemize}
+		
+	\subsection{General Recipe}
+		\begin{enumerate}
+			\item Select a model suited to your task
+			\item Chose a risk estimation method that has desirable properties
+			\item Perform necessary computations to minimize (2), constrained by the family of procedures in (1).
+			\item Show theoretically that your procedure has desirable properties.
+		\end{enumerate}
+
+\section{Brief Optimization \& Convexity Detour}	
+	
+	\subsection{Optimization}
+	An optimization problem can generally be formulated as	
+	\begin{align}
+	\textrm{minimize } & F(x) \\
+	\label{eq:constraint1}
+	\textrm{subject to } 
+	& f_j(x) \leq 0 \textrm{ for }  j = 1, \ldots, m \\
+	\label{eq:constraint2}
+	& h_k(x) = 0 \textrm{ for }  k = 1, \ldots, q
+	\end{align}
+	where
+	\begin{itemize}
+	\item[] $x = (x_1, \ldots, x_n)^{\top}$ are the \alg{parameters}
+	\item[] $F:\R^n \rightarrow \R$ is the \alg{objective function}
+	\item[] $f_j,h_k:\R^n \rightarrow \R$ are \alg{constraint functions}
+	\end{itemize}
+	
+	\subsection{Convexity}
+	The main dichotomy of optimization problems is \underline{convex} vs. \underline{nonconvex}.
+	
+	\textbf{Intuition:} \underline{Convexity} means that the function values at a point $x'$ are \underline{above} the supporting hyperplane given by the tangent space at \underline{any} point $x$. See \autoref{convex} for an example.
+	
+	
+	\begin{figure}[h]
+	\centering
+	\includegraphics[height=4in]{convex.pdf}
+	\caption{Convex function, $f(x) = 2(x-1)^2 + 1$, with tangent line at $x = 0.50$.}
+	\label{convex}
+	\end{figure}
+	
+	Methods  for convex optimization programs are (roughly) always \alo{global} and \alo{fast}.
+	
+For general nonconvex problems, we have to give up one of these:
+	\begin{itemize}
+	\item Local optimization methods that are fast, but need not find global solution
+	\item Global optimization methods that find global solutions, but
+are not always fast (indeed, are often slow)
+	\end{itemize}
+
+	
+
+\section{Model Selection}
+
+	If there are $p$  predictors  then there are \alo{$2^p -1$ possible models ,\script{without considering interactions or transformations}. In general, this is a nonconvex problem. We must sift through the models in a computationally feasible way.
+
+	\subsection{All Subsets: specific case of Branch and Bound}
+
+	
+	This can efficiently be computed via the \alr{leaps} package in \alr{R}, using either the 
+\alr{leaps} or \alr{regsubsets} functions.
+
+\script{The statistical implementation is based on the paper Furnival and Wilson (1974)}
+
+It is by far the most widely used tool for solving large scale NP-hard combinatorial optimization problems.
+
+Note, however, that though it can speed up the optimization immensely, it cannot reduce the complexity
+of the problem (still exponential)
+	
+	\subsection{Branch and Bound}
+	
+	Let $M = \{M_1,\ldots,M_K\}$ be the set of all possible solutions and a partition comprised of \alg{branches}, respectively.  
+
+	\script{Statistically, we think of $M$ as the set of all possible models.}
+
+
+	Let $F$ be the objective function and $m_* = \max_{m \in M} F(m)$.
+
+
+For each $M_k$, define
+\[
+m_k = \max_{m \in M_k} F(m) 
+\]
+and let $\underline{m}_k, \overline{m}_k $ be a \alo{bracket} such that
+\[
+ \underline{m}_k \leq m_k \leq \overline{m}_k 
+\]
+\script{(Note that $m_k$ is in general not explicitly constructed)}
+
+Then
+\[
+\max_k \underline{m}_k = \underline{m} \leq m_* \leq \overline{m} = \max_k \overline{m}_k
+\]
+
+The main realization is that the \alg{branch} $M_k$ does not need to be explored if
+either of the following occur
+\begin{itemize}
+\item[i.] \smallCapGreen{Bound}
+\[
+\overline{m}_k \leq \underline{m}
+\]
+\item[ii.] \smallCapGreen{Optimality}
+\[
+\max_{m \in M_k} F(m) \textrm{ has been found}
+\]
+\end{itemize}
+
+The two main questions remain:
+\begin{enumerate}
+\item How to choose the partition(s)?
+\item How to form the upper/lower bounds?
+\end{enumerate}
+These are very case specific.  Let's return to model selection
+
+\newpage
+
+		\subsubsection{Branch and Bound for Model Selection}
+		
+		Let's suppose we set\footnote{Note: we are trying to minimize $F$, not maximize}
+\[
+F(m) = n \log(\train(\hat\beta_m)) + 2|m| 
+\]
+
+For the $M_k$, let
+\begin{itemize}
+\item[] $m_{k,inf}$ be the largest model contained\footnote{This does not have to be in $M_k$}
+ in every model in $M_k$
+\item[] $m_{k,sup}$ be a smallest model that contains every model in $M_k$
+\end{itemize}
+
+	\begin{example} Let $x_1, \ldots, x_5$ be covariates
+
+\[
+M  = \cup_{k=1}^3 M_k,
+\]
+where
+\begin{align*}
+M_1 
+& = \{\{x_1,x_3\}, \{x_2\} \}, \\
+M_2 
+& = \{\{x_2,x_3,x_4\}, \{x_3,x_4\} \}, \\
+ M_3 
+& = \{\{x_3,x_5\}, \{x_3\} \}, 
+\end{align*}
+Then,
+\begin{itemize}
+\item[] $m_{2,inf} = \{x_3,x_4\}$
+\item[] $m_{2,sup} = \{x_2,x_3,x_4\}$
+\end{itemize}
+
+	\end{example}
+	
+From the above definitions, we have: $\forall m \in M_k$
+\begin{itemize}
+\item[] $F(m) \geq n \log(\train(\hat\beta_{m_{k,\sup}})) + 2|m_{k,\inf}| = L_k$  
+\item[] $F(m) \leq n \log(\train(\hat\beta_{m_{k,\inf}})) + 2|m_{k,\sup}|  = U_k$ 
+\end{itemize}
+
+
+	\subsubsection{Branch and Bound for Model Selection: Algorithm}
+	
+	\begin{enumerate}
+\item Define a global variable $b = F(m)$ for any $m \in M$
+
+\script{As an aside, every time $F(m)$ is computed, update $b$ if $F(m) < b$} 
+\item Partition $M = \{M_1,\ldots,M_K\}$\Note
+\item For each $k$, if $L_k > b$, eliminate the branch $M_k$
+\item Else, recurse and return to \textcolor{bluemain}{2.}, substituting $M_k$ for $M$
+\end{enumerate}
+
+\underline{Zach's notes:} 
+	\begin{itemize}
+		\item Hand (1981) provides a very readable paper describing the algorithm with a nice general example and examples of how the algorithm is applied to specific statistical problems (e.g. selecting variables in a regression analysis).
+		\item \underline{Question:} what is the most efficient way to ``grow" the tree? (i.e. how to partition $M$?) In their 1974 paper titled ``Regression by Leaps and Bounds" (hence the names of the $R$ function), Furnival and Wilson propose 4 different algorithms for partitioning \underline{and} traversing the tree.
+		\item For just partitioning the tree, Furnival and Wilson illustrate two strategies:
+			\begin{enumerate}
+				\item \underline{Binary trees:} each parent is split into two notes. For example:
+			
+			\Tree [.$\{x_1,x_2,x_3\}$ [.$\{x_1,x_2,x_3\}$ $\{x_1,x_2,x_3\}$ $\{x_1,x_3\}$  ] [.$\{x_2,x_3\}$ $\{x_2,x_3\}$ $\{x_3\}$ ] ]
+				
+				\item \underline{Add-one-at-a-time:} (or nesting idea)
+				
+			
+
+    \Tree[.$\{x_1,x_2,x_3\}$ $\{x_1\}$ [.$\{x_1,x_2\}$  $\{x_2\}$ $\{x_1,x_2\}$  ] [.$\{x_1,x_2,x_3\}$ $\{x_3\}$ $\{x_1,x_3\}$ $\{x_1,x_2,x_3\}$ ]  ]
+		\end{enumerate}
+	
+		\item Note: the partitioning of the above trees is incomplete.	
+		\item In general, I have not come across an ``optimal" method for partitioning trees.
+		\item I've found some literature on the most efficient way to select exactly $g$ features from a set of $p$ features ($g < p$). (e.g. see Narendra and Fukunaga, 1977)
+	\end{itemize}
+
+
+
+	\subsection{Stepwise}
+		\subsubsection{Forward Stepwise Selection}
+		In the likely event that $|M|$ is too large to be searched over exhaustively, a common \alg{greedy}
+approximation is the following
+
+\begin{enumerate}
+\item Find $b = F(\emptyset)$, where $\emptyset$ is the empty set
+\item Search over all $p$ singleton sets and record $m_{1,\min} = \argmin F(m)$.  If $F(m_{1,\min}) < b$ set  $b \leftarrow F(m_{1,\min})$, else return $\emptyset$
+\item Now search over all $p-1$ models that contain $m_{1,\min}$ and form $m_{2,\min} = \argmin F(m_{1,\min} \cup \{x_j\})$.
+If $F(m_{2,\min}) < b$ set  $b \leftarrow F(m_{2,\min})$, else return $m_{1,\min}$
+\item $\cdots$
+\end{enumerate}
+
+		\subsubsection{General Stepwise Selection}
+		This algorithm can can adapted to..
+\begin{itemize}
+\item start with the full model and stepwise remove covariates 
+
+\script{useful if the full model isn't too large and a superset of the important covariates is desired}
+\item consider both adding and removing covariates at each step
+\end{itemize}
+
+		
+	\subsection{Regularization: see next set of notes}
+
+
+\bibliography{AllReferences}
+\end{document}

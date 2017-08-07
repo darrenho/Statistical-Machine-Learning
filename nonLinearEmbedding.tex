@@ -1,0 +1,445 @@
+\documentclass{beamer}
+%\usepackage[usenames,dvipsnames]{xcolor}
+
+\usepackage{_defsAndPackages675notation}
+\usepackage{_defsAndPackages675beamer}
+
+\begin{document}
+
+\title{\alg{Nonlinear Embeddings}}
+\subtitle{\classTitle}
+%\author{\alg{Darren Homrighausen, PhD}}
+%\institute{\classTitle}
+\date{}
+
+
+
+\begin{frame}
+\maketitle
+%\titlepage
+%\begin{figure}[h!]
+%  \centering
+%  \includegraphics[width=1in]{.../../figures/CSU_logo2.eps}
+%\end{figure}
+%
+\organization
+%
+\end{frame}
+
+\begin{frame}
+  \frametitle{Lower dimesional (metric) embeddings}
+  \alg{Spectral connectivity analysis (SCA)} is a general process for finding lower
+  dimensional structure in the data
+
+  \vsp
+It can be...
+  \begin{itemize}
+  \item Linear or nonlinear
+  \item Used for dimension reduction or feature creation
+  \item PCA, PLS, Fisher discriminant analysis, Locally
+    linear embeddings, Hessian eigenmaps, \alo{Laplacian
+      eigenmaps}
+  \item Useful as an input to classification, clustering, and regression approaches
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{When PCA Works Well}
+PCA can do effective dimension reduction
+(that is, explain most of the data with $m < p$ components) as long as the data can be efficiently represented as
+  `lines' (or planes, or hyperplanes). 
+  So, in two dimensions:
+  \begin{figure}
+    \centering
+    \includegraphics[width=2.2in]{../figures/pcaGood1.pdf}
+    \includegraphics[width=2.2in]{../figures/pcaGood2.pdf}    
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{When PCA doesn't work well}
+  What about other data structures?  Again in two dimensions
+  \begin{figure}
+    \centering
+    \includegraphics[width=2.2in]{../figures/pcaBad1.pdf}
+    \includegraphics[width=2.2in]{../figures/pcaBad2.pdf}    
+  \end{figure}
+  Here, we have failed miserably.  
+  \end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Explanation}
+  \begin{itemize}
+  \item PCA wants to minimize distances (equivalently maximize
+    variance).  This means it \alo{slices} through the data at the
+    \alo{meatiest} point, and then the next one, and so on.  If the data are
+    `curved' this is going to induce artifacts.  
+  \item PCA also looks at things as being \alo{close} if they are near each
+    other in a Euclidean sense \\
+    {\scriptsize [this is essentially  all correlation is]}.  
+    
+  \item On the spiral, our intuition says
+    that things are `close' only if the distance is constrained to go
+    along the curve.  In other words, purple and blue are close, blue and
+    red are not. 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{PCA and covariance}
+
+\smallCapGreen{PCA:} Find the directions of greatest variance.  This doesn't on its
+face seem like it maintains correlations, but observe:
+\[
+var(aX_1 +bX_2) = a^2 Var(X_1)+ b^2 Var(X_2) + 2abCov(X_1,X_2)
+\]
+If we standardize the matrix, then this reduces to
+\[
+var(aX_1 +bX_2) = a^2 + b^2 + 2abCov(X_1,X_2)
+\]
+This gets maximized over $a^2 + b^2 = 1$.  
+\begin{itemize}
+\item If $Cov(X_1,X_2) \approx 0$, then this gets maximized
+by any $a^2+b^2 = 1$ (it doesn't matter)
+\item If $Cov(X_1,X_2) \approx 1$, then this gets maximized 
+by setting $a=b = 1/\sqrt{2}$
+\end{itemize}
+So, in either case, we are really maintaining \alo{correlations}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Graphical example of the phenomenon}
+\scriptsize
+\begin{verbatim}
+library(mvtnorm)
+sigma   = matrix(c(1,sig,sig,1),nrow=2)
+nsweep  = 1000
+outcome = matrix(0,nrow=nsweep,ncol=2)
+for(sweep in 1:nsweep){
+x               = rmvnorm(200,c(0,0),sigma)
+out.pca         = prcomp(x,center=T,scale=F)
+outcome[sweep,] = out.pca$rotation[,1]
+}
+plot(outcome,xlab='PC1',ylab='PC2')
+\end{verbatim}
+
+\begin{figure}[h]
+   \centering
+   \includegraphics[width=1.75in,trim=0 20 0 55,clip]{../figures/PCAnoCorrelation.pdf}
+   \includegraphics[width=1.75in,trim=0 20 0 55,clip]{../figures/PCACorrelation.pdf} 
+   \caption{Left: {\tt sig = 0}. Right: {\tt sig = .999}}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+  \alg{\huge Nonlinear embeddings}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Kernel PCA}
+Classical PCA comes from $\tilde\X = \X - M\X = UDV^{\top}$, where $M = 11^{\top}/n$ and $1 = (1,1,\ldots,1)^{\top}$
+
+\vsp
+However, we can just as easily get it from the \alo{outer product}
+\[
+\tilde{K} = \tilde\X\tilde\X^{\top} = (I - M)\X\X^{\top}(I - M) = UD^2U^{\top}
+\]
+
+\vsp
+The intuition behind KPCA is that $\tilde{K}$ is a (trivial) expansion into a kernel space, where
+\[
+\tilde{K}_{i,i'} = k( \tilde{X}_i,\tilde{X}_{i'}) = \langle \tilde{X}_i,\tilde{X}_{i'} \rangle
+\]
+\smallCapGreen{Remember:} Anytime we see an inner product, we can kernelize it
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Kernel PCA}
+Following this intuition, the approach is simple:
+\begin{enumerate}
+\item Specify a kernel $k$
+
+\script{e.g. $k(x,x') = \exp\{ -\gamma^{-1}\norm{x - x'}_2^2\}$}
+\item Form $K_{i,i'} = k(X_i,X_{i'})$
+\item Standardize and get eigenvector decomposition
+\[
+\tilde{K} = (I - M)K(I - M) = UD^2U^{\top}
+\]
+\end{enumerate}
+This implicitly finds the inner product:
+\[
+k(X_i,X_{i'}) = \langle \phi(X_i),\phi(X_{i'})\rangle 
+\]
+However, we need only specify the \alo{kernel}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Kernel PCA}
+To get the first `PC', we are solving for the \alo{function} $\hat g_1$:
+\[
+\max_{g \in \mathcal{H}_k} \V g(X) \textrm{ subject to } \norm{g}_{\mathcal{H}_k} = 1
+\]
+Due to the \alo{representer theorem}, we know that the solution has the form
+\[
+\hat{g}_1(X) = \sum_{i=1}^n c_i k(X,X_i)
+\]
+\vsp
+
+Additional PCs can be found be enforcing an orthogonality condition 
+
+\script{w.r.t. the inner product on $\mathcal{H}_k$}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Recall}
+  \begin{figure}
+    \centering
+    \includegraphics[width=2.2in]{../figures/pcaBad1.pdf}
+    \includegraphics[width=2.2in]{../figures/pcaBad2.pdf}    
+  \end{figure}
+  \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Laplacian Eigenmaps}
+  In order to use the intuitive distance, we need to know the \alo{geometry} of the data.  This needs to be estimated.
+  \vsp
+  
+  We can get an estimate of the distance in the unknown geometry that
+  the data come from (known as a \alg{manifold}) by altering the
+  usual Euclidean distance. 
+  
+  \vsp
+%  \begin{table}
+%    \centering
+%    \begin{tabular}{lcc}
+%      & PCA & Laplacian Eigenmaps \\
+%      distance between $x$ and $y$: & $||x-y||_2$ &$ \exp\left\{
+%        \frac{-||x-y||_2^2}{\epsilon} \right\} $ 
+%    \end{tabular}
+%  \end{table}
+  Some notes:
+  \begin{itemize}
+  \item The name \alg{Laplacian Eigenmaps} comes from getting the
+    \alo{eigenvector} decomposition of the \alo{Laplacian} restricted to the
+    manifold (which is the second derivative version of the gradient).
+  \item If the manifold is smooth, then \alo{local} Euclidean distance is an approximation
+  to the distance on the manifold.
+    \end{itemize}
+\end{frame}
+
+
+
+
+%\begin{frame}
+%  \frametitle{Diffusion}
+%  \begin{center}
+%    \includegraphics[width=.9\paperwidth]{../figures/diffuse.pdf}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}
+%  \frametitle{Projection}
+%  \begin{center}
+%    \includegraphics[height=.75\paperheight]{../figures/spiralcoord.pdf}
+%  \end{center}
+%\end{frame}
+
+%\begin{frame}[fragile]
+%\frametitle{What is a manifold?}
+%Let's think of a manifold as a lower dimensional structure in our data (that is, $\mathbb{R}^p$).
+%\vsp
+%
+%If that structure is linear, then Euclidean distance is still a fine choice
+%%\begin{figure}
+%%\centering
+%%\includegraphics[width=2.3in]{../figures/linearManifold.pdf}
+%%\end{figure}
+%%  {\scriptsize (Figure courtesy of James, Witten, Hastie, Tibshirani (2013) `Introduction to Statistical Learning')}.  
+%%
+%%\end{frame}
+%%
+%%\begin{frame}[fragile]
+%%\frametitle{What is a Manifold?}
+%\vsp
+%
+%If that structure is nonlinear, then Euclidean distance isn't applicable:
+%\begin{figure}
+%\centering
+%\includegraphics[width=2.1in,trim=0 0 0 45,clip]{../figures/nonlinearManifold.pdf}
+%\end{figure}
+%  \source{right}{James, Witten, Hastie, Tibshirani (2013)}  
+%\end{frame}
+
+%\begin{frame}[fragile]
+%\frametitle{What is a Manifold?}
+%However, in either case, over a small area, Euclidean distance is still a good representation of distance on the manifold.
+%\begin{figure}
+%\centering
+%\includegraphics[width=2.5in]{../figures/linearManifold.pdf}
+%\includegraphics[width=2.5in]{../figures/nonlinearManifold.pdf}
+%\end{figure}
+%
+%\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{What is a manifold?}
+How good of an approximation is Euclidean distance? 
+\vsp
+
+This question is equivalent to how asking: how quickly does the \alo{tangent} (space) change?  
+
+\vsp
+In 1-D, the tangent space is just the first derivative at that point: 
+\[
+f(x) = x^2 \Rightarrow f'(x) = 2x.
+\]
+\begin{figure}
+\centering
+\includegraphics[width=2in]{../figures/quadraticManifoldExample.pdf}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{What is a Manifold?}
+Therefore, the quality of the (local) Euclidean distance, depends on the \alo{second derivative} 
+
+{\scriptsize (ie: how fast does the first derivative change?) }
+
+\vsp
+In higher dimensions, the second
+derivative is known as the \alg{Laplacian}:
+\[
+\sum_{j} \frac{\partial^2 f}{\partial x_j^2}
+\]
+{\scriptsize (Note: This is also known as the \alg{divergence} of the gradient)}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{What are Laplacian Eigenmaps, then?}
+Imagine the operator $\mathbb{L}$ that performs this operation:
+\[
+\mathbb{L} f = \sum_{j} \frac{\partial^2 f}{\partial x_j^2}
+\]
+\vsp
+
+Then $\mathbb{L}$ is the \alg{Laplacian}, mapping a function to the 
+divergence of its gradient
+\vsp
+
+\emphasis{8cm}{Key Idea:}{We can get the eigenvectors/eigenvalues of $\mathbb{L}$. Analogously to PCA, we can now do inference with these eigenvectors.}
+
+\vsp
+\smallCapGreen{Note:} There is a substantial overlap with KPCA, the difference being the centering of $K$
+and the \alo{row sum} versus \alo{column sum} normalization
+\end{frame}
+
+\begin{frame}
+  \frametitle{Laplacian Eigenmaps}
+  Collect data: $X_1,\ldots,X_n$ where $X_i\in\R^p$.
+  \vsp
+
+  \begin{enumerate}
+  \item Form the distance matrix $\Delta_{ij} =  ||X_i-X_j||_2^2$.
+  \item Compute
+    \[
+    \mathbb{K} = \exp\left(-\frac{\Delta}{\gamma}
+    \right)
+    \]
+  \item Form the Laplacian $\mathbb{L} = \mathbb{I} -
+    \mathbb{M}^{-1}\mathbb{K}$, 
+    \[ 
+    \mathbb{M} = {\tt      diag(rowSums(\mathbb{K}))}
+    \] 
+  \item Compute the spectrum: $\mathbb{L} = U\Sigma U^\top$.
+  \item Return $U_d$, where $U_d$ corresponds to the smallest $d$ (nontrivial) eigenvalues of
+ $\mathbb{L}$\\
+    {\scriptsize (Note that the eigenvectors of $\mathbb{L}$ and
+      $\mathbb{M}^{-1}\mathbb{K}$ are the same but the order of the eigenvalues are reversed)}
+  \end{enumerate}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Deeper investigation}
+\begin{itemize}
+\item[1.] Form the distance matrix $\Delta$.
+\end{itemize}
+\begin{figure}
+\centering
+\includegraphics[width=2.1in]{../figures/pcaBad1.pdf}
+\includegraphics[width=2.1in]{../figures/spiralManifoldExampleDist.pdf}
+\caption{If we think about the center as 0 and the last blue circle as
+  1, then each entry the plot on the Right is the Euclidean distance
+  between each data point on the plot on the Left (that is,
+  $\Delta$). The color on the Right plot goes from purple (small
+  distance) to beige/pink (large distance). }   
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Deeper investigation}
+
+\begin{blockcode}
+Delta = as.matrix(dist(X,diag=TRUE,upper=TRUE))
+
+image(Delta,col=topo.colors(10))
+\end{blockcode}
+\end{frame}
+\begin{frame}
+  \frametitle{Deeper investigation}
+  \begin{itemize}
+  \item[2.] Exponentiate $-\Delta/\gamma$ to form  $\mathbb{K}$ for some fixed $\gamma$.
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=.35\paperwidth]{../figures/spiralManifoldExampleDist.pdf}
+    \includegraphics[width=.35\paperwidth]{../figures/spiralManifoldExampleWgamma.pdf}
+    \caption{The Left plot is $\Delta$ and the Right plot is $ \mathbb{K}$ for $\gamma = 0.95$. }  
+  \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Deeper investigation}
+
+\begin{blockcode}
+gamma = 0.95
+Wgamma = exp(-Delta/gamma)
+image(Wgamma,col=topo.colors(10))
+\end{blockcode}
+\end{frame}
+
+%
+%\begin{frame}[fragile]
+%\frametitle{Spiral in $\mathbb{R}^3$}
+% \alb{To \alr{R} $\rightarrow$ for a demonstration}\footnotemark
+%\footnotetext{3dspiralPlot.R}
+%\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Spiral in $\mathbb{R}^3$}
+  \begin{tabular}{ccc}
+    \includegraphics[width=.21\paperwidth,trim=50 0 25 0,clip]{../figures/spiral3dPlot.pdf} &
+    \includegraphics[width=.21\paperwidth,trim=50 0 30 0,clip]{../figures/spiral3dEvecs.pdf} & 
+        \includegraphics[width=.21\paperwidth,trim=50 0 30 0,clip]{../figures/spiral3dEvecs1d.pdf} \\
+        Original data & $1^{st}$ \& $2^{nd}$ nontrivial eigenvectors & 1-dimensional
+ \end{tabular}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Local Euclidean distance approximates the geodesic}
+  \begin{figure}
+    \centering
+    \includegraphics[width=4.5in]{../figures/swissRoll.pdf}
+  \end{figure}
+The red line is the local Euclidean path between the two points, while the blue line is the path along 
+the manifold.
+
+    \source{right}{James, Witten, Hastie, Tibshirani (2013)}  
+\end{frame}
+
+\end{document}
+
